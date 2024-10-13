@@ -146,22 +146,35 @@ exports.updateInvestmentStatusById = async (req, res, next) => {
 
 exports.getInvestmentsByProfileIds = async (req, res, next) => {
   try {
-    // Get the investment profile IDs from req.body
     const { investmentProfileIds } = req.body;
-
-    // Find all Investments entries with matching investment_profile_id
     const investments = await Investments.find({
       investment_profile_id: { $in: investmentProfileIds },
     });
-
-    // Return success response with the investments data
     return res.status(200).json({
       message: "Investments retrieved successfully",
       investments: investments,
     });
   } catch (error) {
-    // Handle any errors
+       return res.status(500).json({ message: "Internal server error" });
+  }
+};
+// Assuming you have a model named Investments
+exports.getInvestmentsByProfile= async (req, res, next) => {
+  try {
+    const { investmentProfileIds } = req.body;
+    const investments = await Investments.find({
+      investment_profile_id: { $in: investmentProfileIds },
+    });
+    const totalInvestment = investments.reduce((acc, investment) => {
+      return acc + investment.amount; 
+    }, 0);
 
+    return res.status(200).json({
+      message: "Investments retrieved successfully",
+      totalInvestment, 
+      investments,
+    });
+  } catch (error) {
     return res.status(500).json({ message: "Internal server error" });
   }
 };

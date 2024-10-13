@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Navbar from "../dashboard/DashboardComponents/Navbar";
 import LeftSideBar from "../dashboard/DashboardComponents/LeftSideBar";
 import { useGettingAllReceiptsQuery } from "../Admin side/ApprovingReceiptsApi";
 import { useNavigate } from "react-router-dom";
 import PropagateLoader from "react-spinners/PropagateLoader";
-import { useEffect } from "react";
 
 const ReceiptsList = () => {
   const navigate = useNavigate();
@@ -12,10 +11,10 @@ const ReceiptsList = () => {
 
   useEffect(() => {
     refetch();
-  }, []);
+  }, [refetch]);
 
   return (
-    <div className="z-[0] ">
+    <div className="z-[0]">
       <Navbar />
       <LeftSideBar />
 
@@ -27,41 +26,40 @@ const ReceiptsList = () => {
             </div>
           ) : (
             <div>
-              {data &&
-              data.filter((receipt) => !receipt.is_deleted).length > 0 ? (
+              {data && data.filter((receipt) => !receipt.is_deleted).length > 0 ? (
                 data
-                  .filter((receipt) => !receipt.is_deleted) // Filter out receipts where is_deleted is false
+                  .filter((receipt) => !receipt.is_deleted)
                   .map((receipt) => {
                     return (
-                      <div className=" my-4">
-                        <div
-                          className="flex justify-between items-center pl-5 bg-gray-200 w-[100%]  rounded-lg"
-                          key={receipt._id}
-                        >
-                          <div className="w-[60%] flex justify-between ">
-                            <div>{receipt.user_id.fullName}</div>
+                      <div className="my-4" key={receipt._id}>
+                        <div className="flex justify-between items-center pl-5 bg-gray-200 w-[100%] rounded-lg">
+                          <div className="w-[60%] flex justify-between">
+                            {/* Check if receipt.user_id exists before accessing fullName */}
+                            <div>
+                              {receipt.user_id ? receipt.user_id.fullName : "No name available"}
+                            </div>
                             <div className="md:block hidden">
-                              {receipt.user_id.cnicNumber}
+                              {receipt.user_id ? receipt.user_id.cnicNumber : "No CNIC available"}
                             </div>
                           </div>
 
                           <div className="flex gap-2">
-                          <button
-                            className="h-[3rem] w-[5rem] bg-red-500 text-white rounded-lg"
-                            onClick={() => {
-                              navigate(`/admin/receiptlist/previewreceipt/${receipt._id}`);
-                            }}
-                          >
-                            Preview
-                          </button>
-                          <button
-                            className="h-[3rem] w-[5rem] bg-indigo-500 text-white rounded-lg"
-                            onClick={() => {
-                              navigate(`/admin/chechreceipt/${receipt._id}`);
-                            }}
-                          >
-                            Approve
-                          </button>
+                            <button
+                              className="h-[3rem] w-[5rem] bg-red-500 text-white rounded-lg"
+                              onClick={() => {
+                                navigate(`/admin/receiptlist/previewreceipt/${receipt._id}`);
+                              }}
+                            >
+                              Preview
+                            </button>
+                            <button
+                              className="h-[3rem] w-[5rem] bg-indigo-500 text-white rounded-lg"
+                              onClick={() => {
+                                navigate(`/admin/chechreceipt/${receipt._id}`);
+                              }}
+                            >
+                              Approve
+                            </button>
                           </div>
                         </div>
                       </div>

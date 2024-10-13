@@ -1,109 +1,152 @@
-import React from 'react'
-import { useGettingAllUsersQuery } from '../Admin side/ApprovingReceiptsApi';
+import React, { useState, useEffect } from 'react';
+import { useGettingAllUsersQuery, useUpdatinguserroleMutation } from '../Admin side/ApprovingReceiptsApi';
 import { PropagateLoader } from 'react-spinners';
 import Navbar from '../dashboard/DashboardComponents/Navbar';
 import LeftSideBar from '../dashboard/DashboardComponents/LeftSideBar';
-import {useUpdatinguserroleMutation,useUpdateUserIsActiveMutation} from '../Admin side/ApprovingReceiptsApi'
-import { FaRegUser } from "react-icons/fa";
-import { useState,useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { Link } from 'react-router-dom';
-import {useNavigate} from 'react-router-dom'
-const AllUsers = () => {
-  const navigate = useNavigate()
-  const handleNavigate = (userId) => {
-    
-    // Replace '/admin/allusers' with the path you want to navigate to
-    navigate(`/admin/allusers/${userId}`);
-  };
-  const [selectedRoles, setSelectedRoles] = useState({});
-const [previousRoles, setPreviousRoles] = useState({});
-  const {data,isLoading,refetch} = useGettingAllUsersQuery()
-  const [updatinguserrole] = useUpdatinguserroleMutation()
-  const [updateUserIsActive] = useUpdateUserIsActiveMutation()
 
-  const [formData, setformData] = useState({
-    userRole:""
-  });
+const AllUsers = () => {
+  const navigate = useNavigate();
+  const { data, isLoading, refetch } = useGettingAllUsersQuery();
+  const [activeUsers, setActiveUsers] = useState([]);
+  const [inactiveUsers, setInactiveUsers] = useState([]);
+  const [showActive, setShowActive] = useState(true);
+  const [updatinguserrole] = useUpdatinguserroleMutation();
+  const [selectedRoles, setSelectedRoles] = useState({});
+
   useEffect(() => {
     refetch();
-  }, []);
-const formDataHandler = (selectedValue, id) => {
- 
-    updatinguserrole({
-      userId: id,
-      newRole: selectedValue
-    }).unwrap().then((response) => {
-      toast.success(response.message);
-    });
+    if (data) {
+      setActiveUsers(data.data.filter((user) => user.isActive));
+      setInactiveUsers(data.data.filter((user) => !user.isActive));
+    }
+  }, [data]);
+
+  const handleNavigate = (userId) => {
+    navigate(`/admin/allusers/${userId}`);
   };
 
-const handleRoleChange = (userId, role) => {
-  setSelectedRoles(prevRoles => ({
-    ...prevRoles,
-    [userId]: role,
-  }));
-};
-const toggleIsActive = (userId, currentIsActive) => {
-  const confirmation = window.confirm("Are you sure you want to change the user activation?");
-    if (confirmation) {
-      const newIsActive = !currentIsActive; // Toggle the isActive value
-      updateUserIsActive({
-        id: userId,
-        isActive: newIsActive
-      }).unwrap().then((response) => {
-        window.location.reload();
+  const handleAddUser = () => {
+    navigate('/auth/signup');
+  };
+
+  const handleRoleChange = (userId, newRole) => {
+    setSelectedRoles((prev) => ({
+      ...prev,
+      [userId]: newRole,
+    }));
+
+    updatinguserrole({
+      userId: userId,
+      newRole: newRole,
+    })
+      .unwrap()
+      .then((response) => {
         toast.success(response.message);
+      })
+      .catch((error) => {
+        toast.error('Error updating role');
       });
-    }
-};
+  };
+
   return (
     <div>
-      <Navbar/>
-      <LeftSideBar/>
-      {
-        isLoading ? (
-          <div className="flex justify-center items-center h-[full]">
-              <PropagateLoader color="#3B82F6" />
-            </div>
-        ):(
-          <div className='xl:ml-[15rem] mt-[5.8rem] p-5'>
-            { data &&
-              data.data.map((user) => (
-                // <button onClick={() => toggleIsActive(user._id, user.isActive)} key={user._id} className={`text-black w-full flex justify-between items-center p-4 border-b border-gray-200 ${user.isActive ? 'bg-indigo-400' : 'bg-red-400'}`}>
-                  <button onClick={(event) => {
-                    handleNavigate(user._id);
-                  }}  key={user._id} className={`text-black w-full flex justify-between items-center p-4 border-b border-gray-200 ${user.isActive ? 'bg-indigo-400' : 'bg-red-400'}`}>
-                  <div>
-                    <p className='text-start'>{user.fullName}</p>
-                    <p className='text-start'>{user.mobileNumber}</p>
-                  </div>
-                  <div>
-                  <select
-              name={`role_${user._id}`}
-              onClick={(event) => event.stopPropagation()}
-              onChange={(event)=>{
-                handleRoleChange(user._id, event.target.value);
-                formDataHandler(event.target.value, user._id );
-              }}
-              value={selectedRoles[user._id] || user.role}
-              id="project_duration"
-              className="sm:ml-2 p-1 sm:w-[13.2rem] w-full bg-slate-100 rounded-md"
+      <Navbar />
+      <LeftSideBar />
+      <div className="xl:ml-[15rem] mt-[5.8rem] p-5">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl ">Users</h1>
+          <div className="flex gap-4">
+            <button
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-all shadow-md"
+              onClick={handleAddUser}
             >
-              <option value="Member">Member</option>
-              <option value="Admin">Admin</option>
-            </select>
-                    
-                  </div>
-                  </button>
-                  // </button>
-              ))
-            }
+              + Add User
+            </button>
+            <button
+              className={`px-4 py-2 text-white font-semibold ${
+                showActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 hover:bg-gray-400'
+              } rounded transition-all`}
+              onClick={() => setShowActive(true)}
+            >
+              Active Users
+            </button>
+            <button
+              className={`px-4 py-2 text-white font-semibold ${
+                !showActive ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-300 hover:bg-gray-400'
+              } rounded transition-all`}
+              onClick={() => setShowActive(false)}
+            >
+              Inactive Users
+            </button>
           </div>
-        )
-      }
-    </div>
-  )
-}
+        </div>
 
-export default AllUsers
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[full]">
+            <PropagateLoader color="#3B82F6" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white shadow-md rounded-lg border">
+              <thead>
+                <tr className="bg-blue-100 uppercase text-sm leading-normal">
+                  <th className="py-3 px-6 text-left">Full Name</th>
+                  <th className="py-3 px-6 text-left">Mobile Number</th>
+                  <th className="py-3 px-6 text-left">Role</th>
+                  <th className="py-3 px-6 text-center">Status</th>
+                  <th className="py-3 px-6 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600 text-sm font-light">
+                {(showActive ? activeUsers : inactiveUsers).map((user) => (
+                  <tr
+                    key={user._id}
+                    className={`border-b border-gray-200 hover:bg-gray-50`} // No border classes here
+                  >
+                    <td className="py-3 px-6 text-left font-medium">{user.fullName}</td>
+                    <td className="py-3 px-6 text-left">{user.mobileNumber}</td>
+                    <td className="py-3 px-6 text-left">
+                      <select
+                        value={selectedRoles[user._id] || user.role}
+                        onChange={(event) =>
+                          handleRoleChange(user._id, event.target.value)
+                        }
+                        className="p-2 bg-gray-100 border rounded-md focus:outline-none"
+                      >
+                        <option value="Member">Member</option>
+                        <option value="Admin">Admin</option>
+                      </select>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <span
+                        className={`py-1 px-3 rounded-full text-xs ${
+                          user.isActive
+                            ? 'bg-green-200 text-green-600'
+                            : 'bg-red-200 text-red-600'
+                        }`}
+                      >
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <button
+                        onClick={() => handleNavigate(user._id)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-all shadow-md"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AllUsers;

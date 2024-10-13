@@ -184,6 +184,12 @@ export const AdminBankDetails = createApi({
       },
       }),
     }),
+    getInvestmentProfilesForProject: builder.query({
+      query: (projectId) => `investment-profiles/project/${projectId}`, // Construct the URL
+      transformResponse: (response) => {
+        return response; 
+      },
+    }),
 
     getInvestmentProfilesWithProjectNames: builder.query({
       query: (id) => ({

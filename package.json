@@ -3,10 +3,23 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
   },
   "dependencies": {
+    "@mapbox/node-pre-gyp": "^1.0.11",
+    "bcrypt": "^5.1.1",
     "bootstrap": "^5.3.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-fileupload": "^1.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "juice": "^11.0.0",
     "mongoose": "^8.6.0",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.15",
     "openai": "^4.57.0",
+    "otp-generator": "^4.0.1",
+    "pdfkit": "^0.15.0",
     "react-modal": "^3.16.1"
   }
 }

@@ -28,17 +28,21 @@ export default function Login() {
       .then((response) => {
         console.log(response)
         if (response.data) {
+          if(response.data.message === "User logged in successfully"){
+          //toast.success("user logged in successfully");
+          localStorage.setItem("token", response.data.data.token);
+          dispatch(signUpSuccess(response.data.data));
+          if(response.data.data.role === "Member") {
+            navigate("/member/dashboard");
+          }
+          }
           if(response.data.message === "Email sent successfully"){
           toast.success(response.data.message);
            setShowPopUp(true);
            return
           }
           console.log(response.data.message)
-          localStorage.setItem("token", response.data.data.token);
-          dispatch(signUpSuccess(response.data.data));
-          if(response.data.data.role === "Member") {
-            navigate("/member/dashboard");
-          }
+        
           if(response.data.data.role === "Admin") {
             navigate("/Admin/receiptlist");
           }

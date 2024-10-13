@@ -704,6 +704,29 @@ exports.getInvestmentProfilesWithProjectNames = async (req, res, next) => {
         res.status(500).json({ error: 'Failed to retrieve investment profiles' });
     }
 };
+exports.getInvestmentProfilesForProject = async (req, res, next) => {
+    try {
+        const { projectId } = req.params; 
+        console.log(projectId);
+        const investmentProfiles = await InvestmentProfile.find({ project_id: projectId, is_active: true }).populate('user_id'); 
+        console.log(investmentProfiles);
+        if (investmentProfiles.length === 0) {
+            return res.status(400).json({ error: 'No investment profiles found for this project' });
+        }
+        const userProfiles = investmentProfiles.map(profile => ({
+            user_id: profile.user_id._id,
+            user_name: profile.user_id.fullName, 
+            invested_amount: profile.invested_amount,
+            // investment_date: profile.createdAt 
+        }));
+
+        res.status(200).json(userProfiles);
+    } catch (error) {
+        console.error('Failed to retrieve investment profiles:', error);
+        res.status(500).json({ error: 'Failed to retrieve investment profiles' });
+    }
+};
+
 
 
 // Controller function for getting investment profiles with withdraw flag set to true

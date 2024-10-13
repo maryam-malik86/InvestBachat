@@ -3,23 +3,25 @@ const Donation = require("../models/MemberDonation")
 const ProfitLossEntry = require("../models/ProfitLossEntryModel")
 const Projects = require("../models/ProjectModel")
 const Users = require("../models/signinModel")
-exports.gettingAllProfitsAndLoss = async (req, res,next) => {
+//const ProfitLoss = require('../models/ProfitLoss'); // Adjust the path to your ProfitLoss model
+
+exports.gettingAllProfitsAndLoss = async (req, res) => {
     try {
-        const { user_id } = req.body;
-        console.log(user_id)
-        // Fetch all profit and loss entries for the given user
-        const entries = await ProfitLoss.find({ user_id });
-        // Calculate the total profit and loss separately
-        let totalProfit = 0;
+        const { user_id } = req.body; 
+        console.log(user_id);
+  const entries = await ProfitLoss.find({ user_id });
+ let totalProfit = 0;
         let totalLoss = 0;
 
         entries.forEach((entry) => {
-                totalProfit += entry.profit_amount
-                totalLoss += entry.loss_amount;
+            totalProfit += entry.profit_amount || 0; 
+            totalLoss += entry.loss_amount ;     
         });
-
-        // Return the total profit and loss separately
-        res.json({ totalProfit, totalLoss,net_profit:totalProfit+totalLoss });
+        res.json({
+            totalProfit,
+            totalLoss,
+            net_profit: totalProfit + totalLoss
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal Server Error" });

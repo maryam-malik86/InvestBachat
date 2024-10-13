@@ -3,6 +3,8 @@ import "./App.css";
 import Home from "./features/pages/Home";
 import SignIn from "./features/auth/components/Login";
 import SignUp from "./features/auth/components/Signup";
+import UsersDetail from "./features/pages/UsersDetail"; // This will work if you have a default export
+
 import ForgotPassword from "./features/auth/components/ForgotPassword";
 import ResetPassword from "./features/auth/components/ResetPassword";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -86,6 +88,7 @@ const router = createBrowserRouter([
     path: "/auth/forgot-password",
     element: <ForgotPassword></ForgotPassword>,
   },
+ 
   {
     path: "/auth/reset-password",
     element: <ResetPassword></ResetPassword>,
@@ -167,6 +170,15 @@ const router = createBrowserRouter([
     element: <AdminRoute><SingleUserDetail/></AdminRoute>,
   },
   {
+    path: "/admin/usersDetail", // Path for all users
+    element: (
+      <AdminRoute>
+        <UsersDetail />
+      </AdminRoute>
+    ),
+  },
+  
+  {
     path: "/admin/setprofitloss",
     element: <AdminRoute><ProfitLoss/></AdminRoute>,
   },
@@ -191,6 +203,11 @@ const router = createBrowserRouter([
     path: "/admin/getApprovedWithdrawalById/:id",
     element: <AdminRoute><SingleApprovedWithDraw/></AdminRoute>,
   },
+  {
+    path: "/admin/allusers/:id",
+    element: <AdminRoute><SingleUserDetail /></AdminRoute>,
+  }
+  
 // /admin/SingleApprovedWithDraw/
 ]);
 

@@ -161,6 +161,13 @@ const Navbar = () => {
       Users
     </Link>
   </li>
+  <li className="flex items-center gap-2 font-normal">
+  <FaRegUser />
+  <Link to="/admin/usersDetail" className="cursor-pointer">
+    Users Detail
+  </Link>
+</li>
+
 
   <li className="flex items-center gap-2">
     <FaClockRotateLeft className="text-xl" />

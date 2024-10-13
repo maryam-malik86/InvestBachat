@@ -107,12 +107,22 @@ export const ApprovingReceipts = createApi({
         },
       }),
     }),
-
+    removeUser: builder.mutation({
+      query: (id) => {
+        console.log(`Removing user with ID: ${id}`); // Correct placement of console.log
+        return {
+          url: `users/${id}`,
+          method: 'DELETE',
+        };
+      },
+    }),
+    
     previeweReceiptById: builder.query({
       providesTags: ["investmentreceipts"],
       query: (id) => ({
         url: `getreceiptdetailsbyid/${id}`,
         method: "GET",
+        
       }),
     }),
 
@@ -399,5 +409,6 @@ export const {
   useSubtractAmountFromDonationMutation,
   useGetAllDonationsQuery,
   useCreateProfitLossEntryMutation,
-  useGetAllProfitLossEntriesQuery
+  useGetAllProfitLossEntriesQuery,
+  useRemoveUserMutation,
 } = ApprovingReceipts;

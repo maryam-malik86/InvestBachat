@@ -13,6 +13,7 @@ const {
   getAllUsers,
   updateUserRole,
   updateUserIsActive,
+  removeUser,
   updateUserData,
   findUserByIdForValidation
 } = require("../Controllers/signIn");
@@ -75,8 +76,9 @@ const {createDonation,getAllDonations} = require("../Controllers/MemberDonation"
 
 router.post("/signUp", signUpData);
 router.post("/loginPage", login);
+
 router.get("/checkUser/:id",findUserByIdForValidation)
-// router.get("/verifyEmail/:token", verifyEmail, redirect); // Verify email and redirect
+ //router.get("/verifyEmail/:token", verifyEmail, redirect); // Verify email and redirect
 
 router.post("/resetPassword", resetPassword);
 router.post("/forgotPassword", forgotPassword);
@@ -121,6 +123,9 @@ router.post("/admin/bankAccount", createBankAccount);
 router.post("/admin/addTransactionId", addTransactionId);
 router.get("/admin/gettingallreceipts", getAllReceipts);
 router.get("/admin/getreceiptbyid/:id", getReceiptById);
+
+router.delete('/admin/users/:id', removeUser);
+router.get('/investment-profiles/project/:id', getInvestmentProfilesWithProjectNames);
 
 router.post("/admin/updatinginvestment", updateInvestment);
 router.get("/admin/gettingallusers", getAllUsers);

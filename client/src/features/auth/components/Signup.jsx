@@ -81,7 +81,7 @@ export default function Signup() {
         if (response.data) {
           // Dispatch the entire response.data object to Redux
           dispatch(signUpSuccess(response.data.data));
-          if (response.data.data.role === "Member") {
+          if (response.data.data.role === "User") {
             navigate("/auth/login");
           }
           if (response.data.data.role === "Admin") {

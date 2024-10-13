@@ -32,9 +32,9 @@ const UserSchema = mongoose.Schema({
   },
   role: {
     type: String,
-    required: true,
-    enum: ["Admin", "Member"], // Fixed values cannot be changed
-  },
+    enum: ['Admin', 'Member', 'User'],
+    default: 'User',
+},
   gender: {
     type: String,
   },
