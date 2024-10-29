@@ -33,6 +33,7 @@ import AllProjects from "./features/pages/AllProjects";
 import UpdateProject from "./features/pages/UpdateProject";
 import PreviewReceipt from "./features/pages/PreviewReceipt";
 import AllApprovedReceipts from "./features/pages/AllApprovedReceipts";
+import InvestmentDetail from "./features/pages/InvestmentDetails"
 import ApprovedReceiptPreview from "./features/pages/ApprovedReceiptPreview";
 import AllUsers from "./features/pages/AllUsers";
 import SingleUserDetail from "./features/pages/SingleUserDetail";
@@ -168,6 +169,10 @@ const router = createBrowserRouter([
   {
     path: "/admin/allusers/:id",
     element: <AdminRoute><SingleUserDetail/></AdminRoute>,
+  },
+  {
+    path: "/admin/InvestmentDetail",
+    element: <AdminRoute><InvestmentDetail/></AdminRoute>,
   },
   {
     path: "/admin/usersDetail", // Path for all users

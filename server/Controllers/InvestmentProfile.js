@@ -392,94 +392,92 @@ exports.calculateProfitPercentage = async (req, res, next) => {
 
 
 
-// Controller function for calculating profit percentage for all users
 exports.calculateProfitPercentageForAllUsers = async (req, res, next) => {
+    console.log("Request body:", req.body);
     const { projectId, profitAmount, totalInvestedAmount } = req.body;
- 
-    // Find the investment profiles for the given project_id
-    const investmentProfiles = await InvestmentProfile.find({ project_id: projectId, is_active: true });
 
-    if (investmentProfiles.length === 0) {
-        return res.status(200).json({ error: 'No investment profiles found for the project' });
+    if (!projectId || typeof profitAmount !== 'number' || typeof totalInvestedAmount !== 'number') {
+        console.log("Invalid input data");
+        return res.status(400).json({ error: 'Invalid input data' });
     }
 
     try {
-        // Create a map to aggregate profit/loss information for each user
+        const investmentProfiles = await InvestmentProfile.find({ project_id: projectId, is_active: true }).populate('user_id', 'fullName email');
+        console.log("Investment profiles found:", investmentProfiles.length);
+
+        if (investmentProfiles.length === 0) {
+            console.log("No investment profiles found for the project");
+            return res.status(200).json({ error: 'No investment profiles found for the project' });
+        }
+
         const profitLossMap = {};
-
-        // Calculate the profit or loss amount for each user and update in the map
         investmentProfiles.forEach(profile => {
-            const userId = profile.user_id;
-            let amount = (profitAmount / totalInvestedAmount) * profile.invested_amount;
-            amount = Number(amount.toFixed());
-            const type = profitAmount >= 0 ? 'profit_amount' : 'loss_amount'; // Determine whether it's profit or loss
-
-            // If user ID already exists in the map, update profit/loss amount
-            if (userId in profitLossMap) {
-                profitLossMap[userId][type] += amount;
+            if (profile.user_id && profile.user_id._id) {
+                const userId = profile.user_id._id.toString();
+                let amount = (Math.abs(profitAmount) / totalInvestedAmount) * profile.invested_amount;
+                amount = Number(amount.toFixed(2));
+                const isProfit = profitAmount >= 0;
+        
+                if (userId in profitLossMap) {
+                    profitLossMap[userId][isProfit ? 'profit_amount' : 'loss_amount'] += amount;
+                    profitLossMap[userId].invested_amount += profile.invested_amount;
+                } else {
+                    profitLossMap[userId] = {
+                        user_id: userId,
+                        name: profile.user_id.fullName,
+                        email: profile.user_id.email,
+                        project_id: projectId,
+                        invested_amount: profile.invested_amount,
+                        profit_amount: isProfit ? amount : 0,
+                        loss_amount: isProfit ? 0 : amount,
+                    };
+                }
             } else {
-                // If user ID doesn't exist in the map, initialize profit/loss amount
-                profitLossMap[userId] = {
-                    user_id: userId,
-                    project_id: projectId,
-                    profit_amount: type === 'profit_amount' ? amount : 0,
-                    loss_amount: type === 'loss_amount' ? amount : 0,
-                };
+                console.warn("Profile with missing user_id:", profile);
             }
         });
+        
 
-        // Update the ProfitLoss entries for each user
+        console.log("Profit/Loss map created:", Object.keys(profitLossMap).length);
+
         const promises = Object.values(profitLossMap).map(async (entry) => {
             const { user_id, project_id, profit_amount, loss_amount } = entry;
 
             try {
-                // Check if there's an existing entry for the user and project
-                const existingEntry = await ProfitLoss.findOne({ user_id});
+                const existingEntry = await ProfitLoss.findOne({ user_id, project_id });
 
                 if (existingEntry) {
-                    // If an entry exists, update profit and loss amounts
                     existingEntry.profit_amount += profit_amount;
                     existingEntry.loss_amount += loss_amount;
-                    if(profit_amount){
-                        existingEntry.net_profit += profit_amount - loss_amount
-                    }else{
-                        existingEntry.net_profit -= profit_amount - loss_amount
-                    }
+                    existingEntry.net_profit = existingEntry.profit_amount - existingEntry.loss_amount;
                     await existingEntry.save();
+                    entry.net_profit = existingEntry.net_profit;
                 } else {
-                    // If no entry exists, create a new one
                     const newEntry = new ProfitLoss({
                         user_id,
                         project_id,
                         profit_amount,
                         loss_amount,
-                        net_profit : profit_amount-loss_amount,
-                        is_profit_calculated: true // Set initially to true
+                        net_profit: profit_amount - loss_amount,
+                        is_profit_calculated: true,
                     });
                     await newEntry.save();
-
+                    entry.net_profit = newEntry.net_profit;
                 }
             } catch (error) {
                 console.error('Failed to update profit/loss entry:', error);
             }
         });
 
-        // // Set is_profit_calculated to true for the project
-        // await Project.findByIdAndUpdate(projectId, { is_profit_calculated: true });
-
-        // cron.schedule('0 0 1 * *', async () => {
-        //     try {
-        //         // Find and update the project in the database
-        //         await Project.findByIdAndUpdate(projectId, { is_profit_calculated: false });
-        //         console.log("hello gee printing at the start of every month")
-        //     } catch (error) {
-        //         console.error('Failed to update is_profit_calculated:', error);
-        //     }
-        // });
-
         await Promise.all(promises);
 
-        res.status(200).json({ message: 'Profit and loss calculated and stored successfully' });
+        const userDetails = Object.values(profitLossMap);
+        console.log("User details to be sent:", userDetails);
+
+        res.status(200).json({ 
+            message: 'Profit and loss calculated and stored successfully',
+            userDetails: userDetails
+        });
     } catch (error) {
         console.error('Failed to calculate profit/loss:', error);
         res.status(500).json({ error: 'Failed to calculate profit/loss' });

@@ -1,25 +1,76 @@
 import React, { useState } from 'react';
-import { Link ,useNavigate  } from "react-router-dom";
-import { useLoginMutation } from "../rtk";
+import { useNavigate } from "react-router-dom";
+import { useForgotPasswordMutation } from "../rtk";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { signUpFailure, signUpSuccess } from "../authSlice";
-import { useSelector } from "react-redux";
-function ForgotOtp({show, onClose, email, password}) {
-    const navigate = useNavigate();
+
+function ForgotOtp({ show, onClose, email, password, confirmPassword, cnicNumber }) {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [login, { isLoading }] = useLoginMutation();
+  const [forgot, { isLoading }] = useForgotPasswordMutation();
   const [otp, setOtp] = useState(Array(6).fill('')); // Initialize OTP state as an array of 6 empty strings
 
   const handleChange = (element, index) => {
     if (isNaN(element.value)) return false;
 
-    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
+    const newOtp = [...otp.map((d, idx) => (idx === index ? element.value : d))];
+    setOtp(newOtp);
+
+    console.log("Updated OTP state:", newOtp); // Log the OTP to check changes
 
     // Focus next input
     if (element.nextSibling) {
-      element.nextSibling.focus();
+        element.nextSibling.focus();
     }
+};
+
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    // Ensure OTP is fully filled (6 digits)
+    if (otp.join('').length < 6) {
+      toast.error('Please fill in the complete OTP.');
+      return;
+    }
+    const otp_value = otp.join('');  // Combine OTP array into a single string
+console.log('OTP Value:', otp_value);  // Log the joined OTP value
+
+
+    // Construct the request body
+    const requestData = {
+      email: email, 
+      cnicNumber: cnicNumber, 
+      password: password, 
+      confirmPassword: confirmPassword,
+      otp_value: otp_value, // Combine OTP array into a string
+    };
+
+    console.log("Sending this data to the backend:", requestData);
+
+    try {
+      const response = await forgot(requestData).unwrap(); // Send OTP and form data to backend
+     
+        toast.success(response.message);
+        onClose();
+        navigate("/auth/login");
+
+        // localStorage.setItem("token", response.data.token); // Store the token in local storage
+        //  dispatch(signUpSuccess(response.data)); // Update state with successful login
+      
+        
+        //   navigate("/loginPage");
+      
+
+        // onClose(); // Close the OTP popup
+        // toast.success(response.message); // Show success message
+  
+    } catch (error) {
+      toast.error(error.data?.message || 'Error submitting OTP'); // Show error message
+      dispatch(signUpFailure(error.data?.message || 'Error submitting OTP')); // Dispatch failure
+    }
+
+    // setOtp(Array(6).fill('')); // Reset OTP after submission
   };
 
   return (
@@ -30,61 +81,23 @@ function ForgotOtp({show, onClose, email, password}) {
             <div className="px-4 py-2 flex justify-between items-center">
               <h2 className="text-2xl font-bold">Enter OTP</h2>
             </div>
-
             <hr />
-
             <div className="p-4">
+              {/* Render 6 OTP input fields */}
               {Array(6).fill(0).map((_, index) => (
                 <input
                   className="w-10 mr-2 px-2 py-2 border rounded my-6"
                   type="text"
                   maxLength="1"
                   key={index}
-                  value={otp[index]}
-                  onChange={e => handleChange(e.target, index)}
-                  onFocus={e => e.target.select()}
+                  value={otp[index]}  // Bind the OTP value
+                  onChange={(e) => handleChange(e.target, index)}  // Handle changes
+                  onFocus={(e) => e.target.select()}  // Focus the field
                 />
               ))}
               <button
                 className="w-full px-4 py-2 mt-2 text-white bg-blue-500 rounded"
-                onClick={() => {
-                  // Verify OTP here
-
-                  login({
-                    password: password,
-                    email: email,
-                    otp_value: otp.join('')
-                  })
-                    .then((response) => {
-                      console.log(response)
-                      if (response.data) {
-                        localStorage.setItem("token", response.data.data.token);
-                        dispatch(signUpSuccess(response.data.data));
-                        if(response.data.data.role === "Member") {
-                          navigate("/member/dashboard");
-                          onClose();
-                        }
-                        if(response.data.data.role === "Admin") {
-                          navigate("/Admin/receiptlist");
-                          onClose();
-                        }
-                        toast.success(response.data.message);
-                      } else {
-                        toast.error(response.error.data.message);
-                        dispatch(signUpFailure(response.error.data.message));
-                      }
-                    })
-                    .catch((error) => {
-                      console.log(error.message)
-                      console.error("Error during login:", error);
-                      toast.error("An error occurred during login");
-                      dispatch(signUpFailure({ message: "An error occurred during login" }));
-                    });
-
-                  console.log(otp.join('')); // OTP value
-                //   
-                    setOtp(Array(6).fill(''));
-                }}
+                onClick={handleSubmit} // Handle OTP submission
               >
                 Submit
               </button>

@@ -485,6 +485,8 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email, cnicNumber, password, confirmPassword, otp_value } = req.body;
 
+   
+
     // Validate request body
     if (!email || !cnicNumber || !password || !confirmPassword) {
       return res.status(406).json({
@@ -511,10 +513,9 @@ exports.forgotPassword = async (req, res) => {
     }
 
     // If no OTP value is provided, generate and send OTP
-    if (!otp_value) {
+    if (otp_value==='000000') {
       const otp = generateOTP(6); // OTP generation function
 
-      // Store OTP for verification, upsert into the collection (create or update)
       await OtpVerification.findOneAndUpdate(
         { email: email.toLowerCase() },
         { otp },
@@ -554,24 +555,29 @@ exports.forgotPassword = async (req, res) => {
         } else {
           return res.status(200).json({
             success: true,
+            data: req.body,
             message: "OTP sent successfully to your email.",
           });
         }
       });
-    } else {
-      // Verify the OTP
+    } 
+    else {
+      
+     console.log("otp verified");
       const isOtpValid = await OtpVerification.findOne({
         email: email.toLowerCase(),
         otp: otp_value,
       });
-
+ 
+      console.log("otp verified  2434");
       if (!isOtpValid) {
         return res.status(400).json({
           success: false,
           message: "Invalid OTP",
         });
       }
-
+ 
+      console.log("otp verified87457");
       // Hash new password
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -579,7 +585,8 @@ exports.forgotPassword = async (req, res) => {
       // Update the user's password
       user.password = hashedPassword;
       await user.save();
-
+ 
+      console.log("otp verifiedhjehrwjhjh");
       // Respond with success message
       return res.status(200).json({
         success: true,
@@ -593,6 +600,7 @@ exports.forgotPassword = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -718,5 +726,26 @@ exports.findUserByIdForValidation = async (req, res) => {
   } catch (error) {
     console.error("Error checking user existence:", error);
     res.status(500).json({ error: "Server error" });
+  }
+};
+exports.getUserById = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const user = await Model.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

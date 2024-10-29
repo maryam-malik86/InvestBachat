@@ -49,7 +49,7 @@ const Navbar = () => {
         <div>
           Invest Bachat
         </div>
-        <div className="bg-white w-[70%] h-[300vh] xl:hidden   xsm:w-[60%] md:w-[25rem] gap-4 flex xl:flex-row flex-col xl:static absolute top-0 left-0 min-h-dvh xl:w-[40rem] items-start xl:items-center px-8 xl:px-0 xl:py-0 xl:min-h-1 py-8 xl:justify-between text-black duration-300"
+        <div className="bg-white w-[70%] h-[300vh] xl:hidden xsm:w-[60%] md:w-[25rem] gap-4 flex xl:flex-row flex-col xl:static absolute top-0 left-0 min-h-dvh xl:w-[40rem] items-start xl:items-center px-8 xl:px-0 xl:py-0 xl:min-h-1 py-8 xl:justify-between text-black duration-300"
           style={{ left: isOpen ? '0' : '-100%' }} >
         <ul className="flex flex-col gap-4 overflow-auto h-[90vh] pb-16 w-full"
         >
@@ -163,11 +163,19 @@ const Navbar = () => {
   </li>
   <li className="flex items-center gap-2 font-normal">
   <FaRegUser />
-  <Link to="/admin/usersDetail" className="cursor-pointer">
-    Users Detail
-  </Link>
-</li>
-
+    <Link
+      to="/admin/usersDetail"
+      className="cursor-pointer"
+    >
+      User Details
+    </Link>
+  </li>
+  <li className="flex items-center gap-2 font-normal">
+  <FaListUl />
+                  <Link to="/admin/InvestmentDetail" className="cursor-pointer">
+                    Investment Details
+                  </Link>
+                </li>
 
   <li className="flex items-center gap-2">
     <FaClockRotateLeft className="text-xl" />

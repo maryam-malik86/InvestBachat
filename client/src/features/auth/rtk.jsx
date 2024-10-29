@@ -54,14 +54,14 @@ export const authApi = createApi({
       invalidatesTags: ["signins"],
     }),
     forgotPassword: builder.mutation({
-      query: ({ email, cnicNumber, password, confirmPassword }) => ({
+      query: ({ email, cnicNumber, password, confirmPassword,otp_value }) => ({
         url: `forgotPassword`,
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
           accept: 'application/json',
         },
-        body: { email, cnicNumber, password, confirmPassword },
+        body: { email, cnicNumber, password, confirmPassword ,otp_value},
       }),
       invalidatesTags: ["signins"],
     }),

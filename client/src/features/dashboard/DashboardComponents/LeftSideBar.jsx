@@ -42,7 +42,7 @@ const LeftSideBar = () => {
   }
 
   return (
-    <div className="text-black xl:block hidden w-[100%] sm:w-[10rem] md:w-[11rem] lg:w-[15rem] sm:h-[100vh] fixed   bg-white pt-[2rem] top-[5.5rem] shadow-custom ">
+    <div className="text-black xl:block hidden w-[100%] sm:w-[10rem] md:w-[11rem] lg:w-[15rem] sm:h-[100vh] fixed overflow-auto  bg-white pt-[2rem] top-[5.5rem] shadow-custom ">
       <ul className="pl-5 flex sm:flex-col  gap-[.5rem] h-[100vh] overflow-auto">
         {userData.role === "Member" && (
           <>
@@ -138,7 +138,18 @@ const LeftSideBar = () => {
                 Users
               </Link>
             </li>
-
+            <li className="flex items-center gap-2">
+              <FaRegUser />
+              <Link to="/admin/usersDetail" className="cursor-pointer">
+                User Details
+              </Link>
+            </li>
+            <li className="flex items-center gap-2">
+              <FaListUl />
+              <Link to="/admin/InvestmentDetail" className="cursor-pointer">
+                Investment Details
+              </Link>
+            </li>
             <li className="flex items-center gap-2">
               <FaClockRotateLeft />
               <Link to="/admin/receiptlist" className="cursor-pointer">
