@@ -15,7 +15,20 @@ export const ApprovingReceipts = createApi({
         method: "GET",
       }),
     }),
+    fetchProfitLossByDate: builder.query({
+      query: (entryid) => {
+         // Log the date being passed
+        return {
+          url: 'profitlossbydate',
+          method: 'POST',
+          body: { entryid },
+        };
+      },
+      providesTags: ['gettingProfitLossEntry'],
+    }),
+    
     gettingReceiptById: builder.query({
+
       query: (id) => ({
         url: `getreceiptbyid/${id}`,
         method: "GET",
@@ -228,12 +241,12 @@ export const ApprovingReceipts = createApi({
 
     calculateProfitPercentageForAllUsers: builder.mutation({
       query: ({
-        projectId, profitAmount, totalInvestedAmount
+        projectId, profitAmount, totalInvestedAmount, profit_loss_entry_id,
       }) => ({
         url: `calculateProfitPercentageForAllUsers`,
         method: "POST",
         body: {
-          projectId, profitAmount, totalInvestedAmount
+          projectId, profitAmount, totalInvestedAmount,profit_loss_entry_id
         },
       }),
     }),
@@ -352,12 +365,12 @@ export const ApprovingReceipts = createApi({
 
     createProfitLossEntry: builder.mutation({
       query: ({
-        user_id, project_id, amount
+        user_id, project_id, amount, 
       }) => ({
         url: `createProfitLossEntry`,
         method: "POST",
         body: {
-          user_id, project_id, amount
+          user_id, project_id, amount, 
         },
       }),
       invalidatesTags: ["gettingProfitLossEntry"]
@@ -411,4 +424,5 @@ export const {
   useCreateProfitLossEntryMutation,
   useGetAllProfitLossEntriesQuery,
   useRemoveUserMutation,
+  useFetchProfitLossByDateQuery,
 } = ApprovingReceipts;

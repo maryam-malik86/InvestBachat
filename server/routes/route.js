@@ -46,7 +46,8 @@ const {
   getInvestmentProfilesWithProjectNames,
   getWithdrawnInvestmentProfiles,
   getWithDrawInvestmentProfileById,
-  getWithdrawnInvestmentProfileByUserAndProject
+  getWithdrawnInvestmentProfileByUserAndProject,
+  fetchProfitLossByDate,
 } = require("../Controllers/InvestmentProfile");
 const {
   createInvestment,
@@ -144,6 +145,7 @@ router.post("/admin/deleteProject/:id", deleteProject);
 router.post("/admin/updateUserIsActive",updateUserIsActive)
 router.get("/admin/getUserById/:id", getUserById);
 router.post("/admin/calculateProfitPercentage",calculateProfitPercentage)
+router.post("/admin/profitlossbydate", fetchProfitLossByDate);
 router.post("/admin/calculateProfitPercentageForAllUsers",calculateProfitPercentageForAllUsers)
 router.post("/admin/deleteInvestmentProfile",deleteInvestmentProfile)
 router.get("/admin/getWithdrawnInvestmentProfiles",getWithdrawnInvestmentProfiles)

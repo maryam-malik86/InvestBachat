@@ -9,6 +9,11 @@ const profitLossSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users',
     },
+    profit_loss_entry_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ProfitLossEntry',
+    },
+
     profit_amount: {
         type: Number,
         required: true,

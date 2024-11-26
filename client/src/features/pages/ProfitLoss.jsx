@@ -3,39 +3,20 @@ import Navbar from "../dashboard/DashboardComponents/Navbar";
 import LeftSideBar from "../dashboard/DashboardComponents/LeftSideBar";
 import {
   useGettingAllProjectsQuery,
+  useFetchProfitLossByDateQuery,
   useGetAllProfitLossEntriesQuery,
   useCalculateProfitPercentageForAllUsersMutation,
   useCreateProfitLossEntryMutation,
 } from "../Admin side/ApprovingReceiptsApi";
 import { PropagateLoader } from "react-spinners";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Modal from "react-modal";
 
 const ProfitLoss = () => {
-  const [isSlowNetwork, setIsSlowNetwork] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userDetails, setUserDetails] = useState([]); // State to hold user details
-
-  useEffect(() => {
-    // Check network speed logic...
-  }, []);
-
-  const navigate = useNavigate();
-  const userData = useSelector((state) => state.user.userData);
-
-  const [calculateProfitPercentageForAllUsers] = useCalculateProfitPercentageForAllUsersMutation();
-  const [createProfitLossEntry] = useCreateProfitLossEntryMutation();
-  const { data, isLoading, refetch } = useGettingAllProjectsQuery();
-  const { data: profitLossEntry, isLoading: loading, refetch: refetching } =
-    useGetAllProfitLossEntriesQuery();
-
-  useEffect(() => {
-    refetch();
-    refetching();
-  }, []);
-
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedEntryDetails, setSelectedEntryDetails] = useState(null);
   const [formData, setFormData] = useState({
     profitPercentage: "",
     projectId: "",
@@ -43,142 +24,145 @@ const ProfitLoss = () => {
     isProfitCalculated: false,
   });
 
+  const userData = useSelector((state) => state.user.userData);
+
+  // RTK Queries and Mutations
+  const { data: projects, isLoading: projectsLoading, refetch: refetchProjects } = useGettingAllProjectsQuery();
+  const { data: profitLossEntries, refetch: refetchEntries } = useGetAllProfitLossEntriesQuery();
+  const { data: profitLossByDate, isLoading: profitLossLoading } = useFetchProfitLossByDateQuery(selectedDate, {
+    skip: !selectedDate, // Skip fetch if no date is selected
+  });
+  const [calculateProfitPercentageForAllUsers] = useCalculateProfitPercentageForAllUsersMutation();
+  const [createProfitLossEntry] = useCreateProfitLossEntryMutation();
+
   useEffect(() => {
-    if (data && formData.projectId) {
-      const selectedProject = data.data.find(
-        (project) => project._id === formData.projectId
-      );
-      setFormData((prevData) => ({
-        ...prevData,
-        isProfitCalculated: selectedProject
-          ? selectedProject.is_profit_calculated
-          : false,
-      }));
-    }
-  }, [data, formData.projectId]);
+    refetchProjects();
+    refetchEntries();
+  }, []);
 
-  const formDataHandler = (event) => {
-    const { name, value } = event.target;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
     if (name === "projectId") {
-      const selectedProject = data.data.find(
-        (project) => project._id === value
-      );
-      const totalInvestedAmount = selectedProject
-        ? selectedProject.invested_amount
-        : "";
-
-      setFormData((prevData) => ({
-        ...prevData,
+      const selectedProject = projects?.data?.find((project) => project._id === value);
+      setFormData((prev) => ({
+        ...prev,
         projectId: value,
-        totalInvestedAmount: totalInvestedAmount,
+        totalInvestedAmount: selectedProject?.invested_amount || "",
+        isProfitCalculated: selectedProject?.is_profit_calculated || false,
       }));
     } else {
-      setFormData((prevData) => ({
-        ...prevData,
-        [name]: value,
-      }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleCalculateClick = () => {
     if (!formData.projectId || !formData.profitPercentage) {
-      toast.error("Please fill in all required fields");
+      toast.error("Please fill in all required fields.");
       return;
     }
     setIsModalOpen(true);
   };
 
-  const handleConfirm = () => {
+  const handleConfirmCalculation = async () => {
     setIsModalOpen(false);
-    handleCalculateProfit();
-  };
 
-  const handleCalculateProfit = () => {
-    if (isSlowNetwork) {
-      toast.error(
-        "Your internet connection is too slow. Please try again later."
-      );
-    } else {
-      const profitPercentage = parseFloat(formData.profitPercentage);
-      const totalInvestedAmount = parseFloat(formData.totalInvestedAmount);
-      const profitLossAmount =
-        (Math.abs(profitPercentage) / 100) * totalInvestedAmount;
-      const isProfit = profitPercentage >= 0;
+    const profitPercentage = parseFloat(formData.profitPercentage);
+    const totalInvestedAmount = parseFloat(formData.totalInvestedAmount);
+    const profitLossAmount = (Math.abs(profitPercentage) / 100) * totalInvestedAmount;
+    const isProfit = profitPercentage >= 0;
 
-      calculateProfitPercentageForAllUsers({
-        projectId: formData.projectId,
-        profitAmount: isProfit ? profitLossAmount : -profitLossAmount,
-        totalInvestedAmount: totalInvestedAmount,
-      })
-        .then((response) => {
-          if (response.data) {
-            toast.success(response.data.message);
-            createProfitLossEntry({
-              user_id: userData._id,
-              project_id: formData.projectId,
-              amount: isProfit ? profitLossAmount : -profitLossAmount,
-            });
+    try {
+      // First, create the profit/loss entry
+      const createdEntryResponse = await createProfitLossEntry({
+        user_id: userData._id,
+        project_id: formData.projectId,
+        amount: isProfit ? profitLossAmount : -profitLossAmount,
+      });
 
-            if (response.data.userDetails && response.data.userDetails.length > 0) {
-              setUserDetails(response.data.userDetails);
-            } else {
-              toast.error("No user details found.");
-            }
-          } else {
-            toast.error("Failed to calculate profit/loss.");
-          }
-        })
-        .catch((error) => {
-          toast.error("An error occurred. Please try again later.");
+      console.log("Created Profit Loss Entry Response:", createdEntryResponse);
+
+      if (createdEntryResponse?.data) {
+        const profitLossEntryId = createdEntryResponse.data.data._id;
+        console.log("ProfitLossEntryId:", profitLossEntryId);
+
+        // Then, calculate profit percentage for all users
+        const response = await calculateProfitPercentageForAllUsers({
+          projectId: formData.projectId,
+          profitAmount: isProfit ? profitLossAmount : -profitLossAmount,
+          totalInvestedAmount,
+          profit_loss_entry_id: profitLossEntryId,
         });
+
+        console.log("Profit Percentage Calculation Response:", response);
+
+        if (response?.data) {
+          toast.success("Profit/loss calculated successfully!");
+          refetchEntries();
+        } else {
+          toast.error("Failed to calculate profit/loss.");
+        }
+      } else {
+        toast.error("Failed to create profit/loss entry.");
+      }
+    } catch (error) {
+      console.error("Error in handleConfirmCalculation:", error);
+      toast.error("An error occurred during calculation.");
     }
+};
+
+  const handleViewDetails = (entry) => {
+    console.log("Entry clicked:", entry);
+    console.log("Entry ID (date):", entry._id);
+    setSelectedDate(entry._id); // Set the selected date
   };
 
-  const getSelectedProjectName = () => {
-    if (!data || !formData.projectId) return "";
-    const project = data.data.find(p => p._id === formData.projectId);
-    return project ? project.project_name : "";
-  };
+  useEffect(() => {
+    console.log("profitLossByDate:", profitLossByDate);
+    if (profitLossByDate) {
+      setSelectedEntryDetails({
+        records: profitLossByDate.records,
+        date: selectedDate,
+      });
+    }
+  }, [profitLossByDate, selectedDate]);
 
 
   return (
     <>
-      <div>
-        <Navbar />
-        <LeftSideBar />
-        {isLoading ? (
-          <div className="flex justify-center items-center h-screen">
-            <PropagateLoader color="#3B82F6" />
-          </div>
-        ) : (
-          <div className="xl:pl-[12rem]">
-            <div className="mt-[7.6rem] xl:ml-[17rem] xl:w-[75%] w-[90%] mx-auto shadow-custom min-h-[70vh] p-5">
-              <h2 className="text-bold text-2xl mx-auto w-full text-center py-10">
-                Calculate Profit / Loss here
-              </h2>
+      <Navbar />
+      <LeftSideBar />
 
-              <div className="flex sm:flex-row flex-col sm:justify-between mb-4">
-                <label htmlFor="investment-amount" className="font-bold">
+      {projectsLoading ? (
+        <div className="flex justify-center items-center h-screen">
+          <PropagateLoader color="#3B82F6" />
+        </div>
+      ) : (
+        <div>
+          <div className="xl:pl-[12rem]">
+          <div className="mt-[7.6rem] xl:ml-[17rem] xl:w-[75%] w-[90%] mx-auto shadow-custom min-h-[70vh] p-5">
+            <h2 className="text-2xl font-bold text-center py-5">Profit/Loss Calculation</h2>
+
+            <div className="flex sm:flex-row flex-col sm:justify-between mb-4">
+            <label htmlFor="investment-amount" className="font-bold">
                   Select the Project
                 </label>
-                <select
-                  name="projectId"
-                  onChange={formDataHandler}
-                  value={formData.projectId}
-                  id="investment-amount"
-                  className="sm:ml-2 p-1 my-3 sm:w-[13.2rem] w-full bg-slate-100 rounded-md"
-                >
-                  <option value="">Select</option>
-                  {data &&
-                    data.data.map((project) => (
-                      <option key={project._id} value={project._id}>
-                        {project.project_name}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              <select
+                name="projectId"
+                value={formData.projectId}
+                onChange={handleInputChange}
+                className="sm:ml-2 p-2 rounded-md bg-slate-100"
+              >
+                <option value="">Select</option>
+                {projects?.data?.map((project) => (
+                  <option key={project._id} value={project._id}>
+                    {project.project_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="my-4">
+            <div className="my-4">
                 <label
                   htmlFor="profitPercentage"
                   className="block text-sm font-medium leading-6 text-gray-900"
@@ -186,109 +170,112 @@ const ProfitLoss = () => {
                   Enter Profit / Loss Percentage
                 </label>
                 <div className="mt-2">
-                  <input
-                    onChange={formDataHandler}
-                    id="profitPercentage"
-                    name="profitPercentage"
-                    type="number"
-                    autoComplete="profitPercentage"
-                    required
-                    className="focus:outline-none px-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
+              <input
+                type="number"
+                name="profitPercentage"
+                value={formData.profitPercentage}
+                onChange={handleInputChange}
+                className="focus:outline-none px-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                placeholder="Enter percentage"
+              />
               </div>
-
-              <button
-                type="button"
-                className={`flex mx-auto w-[9rem] mt-10 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
-                  formData.isProfitCalculated && "cursor-not-allowed opacity-50"
-                }`}
-                disabled={isLoading || formData.isProfitCalculated}
-                onClick={handleCalculateClick}
-              >
-                {formData.isProfitCalculated
-                  ? "No Investment Yet"
-                  : "Calculate Profit"}
-              </button>
             </div>
-          </div>
-        )}
-      </div>
 
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
-        contentLabel="Confirmation Modal"
-        className="Modal"
-        overlayClassName="Overlay"
-      >
-        <div className="text-center">
-          <h2 className="text-lg font-semibold mb-4">Confirm Calculation</h2>
-          <p className="text-sm mb-6 text-left">Are you sure you want to proceed with this calculation?</p>
-          <div className="mb-4 text-sm text-gray-500 text-left">
-            <p className="mb-2"><strong>Project:</strong> {getSelectedProjectName()}</p>
+            <button
+              className={`flex mx-auto w-[11rem] mt-10 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+                formData.isProfitCalculated && "cursor-not-allowed opacity-50"
+              }`}
+              onClick={handleCalculateClick}
+            >
+              Calculate Profit/Loss
+            </button>
+          </div>
+          </div>
+
+          {/* Modal for Confirmation */}
+          <Modal
+            isOpen={isModalOpen}
+            onRequestClose={() => setIsModalOpen(false)}
+            contentLabel="Confirmation Modal"
+            className="Modal"
+            overlayClassName="Overlay"
+          >
+            <h2 className="text-lg font-bold mb-4">Confirm Calculation</h2>
+            <p>Are you sure you want to calculate profit/loss for this project?</p>
+             <div className="mb-4 text-sm text-gray-500 text-left">
             <p className="mb-2"><strong>Total Investment:</strong> {formData.totalInvestedAmount}</p>
             <p className="mb-2"><strong>Profit/Loss Percentage:</strong> {formData.profitPercentage}%</p>
           </div>
-        
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={handleConfirm}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-500"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </Modal>
+            <div className="flex justify-center gap-2 mt-4">
 
-      {/* User details table */}
-      <div className="xl:pl-[18rem] w-full flex justify-center mt-10 mb-10">
-        <div className="w-[90%] overflow-x-auto">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr>
-                <th className="px-2 py-1 bg-gray-200 text-left">#</th>
-                <th className="px-2 py-1 bg-gray-200 text-left">Name</th>
-                <th className="px-2 py-1 bg-gray-200 text-left">Email</th>
-                <th className="px-2 py-1 bg-gray-200 text-left">Investment</th>
-                <th className="px-2 py-1 bg-gray-200 text-left">Profit</th>
-                <th className="px-2 py-1 bg-gray-200 text-left">Loss</th>
-                <th className="px-2 py-1 bg-gray-200 text-left">Net Profit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {userDetails.length > 0 ? (
-                userDetails.map((user, index) => (
-                  <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-100"}>
-                    <td className="px-2 py-1">{index + 1}</td>
-                    <td className="px-2 py-1">{user.name}</td>
-                    <td className="px-2 py-1">{user.email}</td>
-                    <td className="px-2 py-1">{user.invested_amount}</td>
-                    <td className="px-2 py-1">{user.profit_amount}</td>
-                    <td className="px-2 py-1">{user.loss_amount}</td>
-                    <td className="px-2 py-1">
-                      {user.profit_amount - user.loss_amount}
+              <button
+                 className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-500"
+                onClick={handleConfirmCalculation}
+              >
+                Confirm
+              </button>
+              <button
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </Modal>
+
+          {/* Table of Profit/Loss Entries */}
+          <div className="xl:ml-[15rem] mt-[5.8rem] p-5">
+          <table className="min-w-full bg-white shadow-md rounded-lg border">
+              <thead>
+              <tr className="bg-blue-100 uppercase text-sm leading-normal">
+              <th class="py-3 px-6 text-left">Project</th>
+              <th class="py-3 px-6 text-left">Amount</th>
+              <th class="py-3 px-6 text-left">Date</th>
+              <th class="py-3 px-6 text-left">Action</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600 text-sm font-light">
+                {profitLossEntries?.entries?.slice().reverse().map((entry) => (
+                  <tr key={entry._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="py-3 px-6 text-left font-medium">{entry.project_id?.project_name}</td>
+                    <td className="py-3 px-6 text-left font-medium">{entry.amount}</td>
+                    <td className="py-3 px-6 text-left font-medium">{entry.createdAt}</td>
+                    <td className="py-2 md:py-3 px-3 md:px-6 text-center">
+                      <button
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 px-3 md:py-2 md:px-4 rounded transition-all shadow-md text-xs md:text-base"
+                        onClick={() => handleViewDetails(entry)}
+                      >
+                        View
+                      </button>
                     </td>
                   </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Display selected entry details */}
+          {profitLossLoading ? (
+            <p>Loading details...</p>
+          ) : selectedEntryDetails && (
+            <div className="mt-5 p-4 border border-gray-300 rounded-md">
+              <h3 className="text-lg font-bold mb-3">Details for {new Date(selectedDate).toLocaleDateString()}</h3>
+              {selectedEntryDetails?.records?.length > 0 ? (
+                selectedEntryDetails.records.map((record, index) => (
+                  <div key={index} className="mb-4">
+                    <p><strong>User:</strong> {record.name}</p>
+                    <p><strong>Profit:</strong> {record.profit}</p>
+                    <p><strong>Loss:</strong> {record.loss}</p>
+                    <p><strong>Net Profit:</strong> {record.netProfit}</p>
+                  </div>
                 ))
               ) : (
-                <tr>
-                  <td colSpan="7" className="text-center py-4">
-                    No data to display
-                  </td>
-                </tr>
+                <p>No records found for this date.</p>
               )}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </>
   );
 };

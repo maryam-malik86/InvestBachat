@@ -57,25 +57,25 @@ const WithdrawRequest = require("../models/WithDrawRequestModel")
 
 
 
-// ----- ya wala asal wala ha jo ma use kr rha hoon 
+// ----- ya wala asal wala ha jo ma use kr rha hoon
 
 // exports.createInvestmentProfile = async (req, res, next) => {
 //     try {
 //         // Extract data from the request body
-//         const { 
-//             user_id, 
-//             project_id, 
-//             invested_amount, 
+//         const {
+//             user_id,
+//             project_id,
+//             invested_amount,
 //             profit_earned,
-//             loss, 
-//             investment_frequency, 
-//             is_active, 
+//             loss,
+//             investment_frequency,
+//             is_active,
 //             duration,
-//             receipt_path, 
-//             receipt_id, 
+//             receipt_path,
+//             receipt_id,
 //             is_deleted,
 //             investment_profile_id,
-//             isSubmitted 
+//             isSubmitted
 //         } = req.body;
 //         console.log(req.body)
 //         // Create Investment Profile
@@ -90,7 +90,7 @@ const WithdrawRequest = require("../models/WithDrawRequestModel")
 //             }
 //         }
 //         const formattedDate = investmentDate.toISOString().split('T')[0];
-        
+
 //         const investmentProfile = new InvestmentProfile({
 //             user_id,
 //             project_id,
@@ -154,20 +154,20 @@ exports.createInvestmentProfile = async (req, res, next) => {
 
     try {
         // Extract data from the request body
-        const { 
-            user_id, 
-            project_id, 
-            invested_amount, 
+        const {
+            user_id,
+            project_id,
+            invested_amount,
             profit_earned,
-            loss, 
-            investment_frequency, 
-            is_active, 
+            loss,
+            investment_frequency,
+            is_active,
             duration,
-            receipt_path, 
-            receipt_id, 
+            receipt_path,
+            receipt_id,
             is_deleted,
             investment_profile_id,
-            isSubmitted 
+            isSubmitted
         } = req.body;
 
         // Create Investment Profile
@@ -182,7 +182,7 @@ exports.createInvestmentProfile = async (req, res, next) => {
             }
         }
         const formattedDate = investmentDate.toISOString().split('T')[0];
-        
+
         investmentProfile = new InvestmentProfile({
             user_id,
             project_id,
@@ -387,14 +387,57 @@ exports.calculateProfitPercentage = async (req, res, next) => {
         res.status(500).json({ error: 'Failed to calculate profit percentage' });
     }
 };
+exports.fetchProfitLossByDate = async (req, res, next) => {
+    const { entryid } = req.body;
 
+    if (!entryid) {
+        return res.status(400).json({ error: 'Entry ID is required' });
+    }
+
+    try {
+       
+        const profitLossRecords = await ProfitLoss.find({
+            profit_loss_entry_id: entryid  
+        })
+        .populate('project_id', 'project_name')  
+        .populate('user_id', 'fullName email'); 
+
+        console.log('Profit/Loss Records:', profitLossRecords);
+
+        if (profitLossRecords.length === 0) {
+            console.log("No records found for the specified entry ID");
+            return res.status(200).json({ message: 'No records found for the specified entry ID' });
+        }
+
+        // Prepare the response with the relevant data
+        const response = profitLossRecords.map(record => {
+            return {
+                userId: record.user_id._id,
+                name: record.user_id.fullName,
+                profit: record.profit_amount,
+                loss: record.loss_amount,
+                netProfit: record.net_profit,
+                projectName: record.project_id ? record.project_id.project_name : 'N/A' // Project name from the populated field
+            };
+        });
+
+        console.log('Formatted response:', response);
+        res.status(200).json({
+            message: 'Profit/Loss records fetched successfully',
+            records: response,
+        });
+    } catch (error) {
+        console.error('Error fetching records:', error);
+        res.status(500).json({ error: 'Failed to fetch Profit/Loss records' });
+    }
+};
 
 
 
 
 exports.calculateProfitPercentageForAllUsers = async (req, res, next) => {
     console.log("Request body:", req.body);
-    const { projectId, profitAmount, totalInvestedAmount } = req.body;
+    const { projectId, profitAmount, totalInvestedAmount, profit_loss_entry_id } = req.body;
 
     if (!projectId || typeof profitAmount !== 'number' || typeof totalInvestedAmount !== 'number') {
         console.log("Invalid input data");
@@ -402,87 +445,111 @@ exports.calculateProfitPercentageForAllUsers = async (req, res, next) => {
     }
 
     try {
-        const investmentProfiles = await InvestmentProfile.find({ project_id: projectId, is_active: true }).populate('user_id', 'fullName email');
+        // Fetch active investment profiles for the project
+        const investmentProfiles = await InvestmentProfile.find({
+            project_id: projectId,
+            is_active: true
+        }).populate('user_id', 'fullName email');
+
         console.log("Investment profiles found:", investmentProfiles.length);
 
         if (investmentProfiles.length === 0) {
             console.log("No investment profiles found for the project");
-            return res.status(200).json({ error: 'No investment profiles found for the project' });
+            return res.status(200).json({ message: 'No investment profiles found for the project' });
         }
 
-        const profitLossMap = {};
-        investmentProfiles.forEach(profile => {
+        // Group data by user
+        const userMap = {};
+
+        for (const profile of investmentProfiles) {
             if (profile.user_id && profile.user_id._id) {
                 const userId = profile.user_id._id.toString();
-                let amount = (Math.abs(profitAmount) / totalInvestedAmount) * profile.invested_amount;
-                amount = Number(amount.toFixed(2));
-                const isProfit = profitAmount >= 0;
-        
-                if (userId in profitLossMap) {
-                    profitLossMap[userId][isProfit ? 'profit_amount' : 'loss_amount'] += amount;
-                    profitLossMap[userId].invested_amount += profile.invested_amount;
-                } else {
-                    profitLossMap[userId] = {
-                        user_id: userId,
+
+                if (!userMap[userId]) {
+                    userMap[userId] = {
+                        userId,
                         name: profile.user_id.fullName,
                         email: profile.user_id.email,
-                        project_id: projectId,
-                        invested_amount: profile.invested_amount,
-                        profit_amount: isProfit ? amount : 0,
-                        loss_amount: isProfit ? 0 : amount,
+                        invested_amount: 0, // Sum of all investments for the user
+                        total_profits: 0,  // Total profits from ProfitLoss
+                        total_losses: 0,   // Total losses from ProfitLoss
                     };
                 }
+
+                // Add the investment amount for the user
+                userMap[userId].invested_amount += profile.invested_amount;
             } else {
                 console.warn("Profile with missing user_id:", profile);
             }
+        }
+
+        // Fetch profit/loss data for all users in the project
+        const userIds = Object.keys(userMap);
+        const profitLossRecords = await ProfitLoss.find({
+            user_id: { $in: userIds },
+            project_id: projectId,
         });
-        
 
-        console.log("Profit/Loss map created:", Object.keys(profitLossMap).length);
-
-        const promises = Object.values(profitLossMap).map(async (entry) => {
-            const { user_id, project_id, profit_amount, loss_amount } = entry;
-
-            try {
-                const existingEntry = await ProfitLoss.findOne({ user_id, project_id });
-
-                if (existingEntry) {
-                    existingEntry.profit_amount += profit_amount;
-                    existingEntry.loss_amount += loss_amount;
-                    existingEntry.net_profit = existingEntry.profit_amount - existingEntry.loss_amount;
-                    await existingEntry.save();
-                    entry.net_profit = existingEntry.net_profit;
-                } else {
-                    const newEntry = new ProfitLoss({
-                        user_id,
-                        project_id,
-                        profit_amount,
-                        loss_amount,
-                        net_profit: profit_amount - loss_amount,
-                        is_profit_calculated: true,
-                    });
-                    await newEntry.save();
-                    entry.net_profit = newEntry.net_profit;
-                }
-            } catch (error) {
-                console.error('Failed to update profit/loss entry:', error);
+        // Aggregate profits and losses by user
+        profitLossRecords.forEach(record => {
+            const userId = record.user_id.toString();
+            if (userMap[userId]) {
+                userMap[userId].total_profits += record.profit_amount;
+                userMap[userId].total_losses += record.loss_amount;
             }
         });
 
-        await Promise.all(promises);
+        // Prepare final response
+        const response = [];
+        for (const userId in userMap) {
+            const userData = userMap[userId];
+            const updatedInvestment = userData.invested_amount + userData.total_profits - userData.total_losses;
 
-        const userDetails = Object.values(profitLossMap);
-        console.log("User details to be sent:", userDetails);
+            // Calculate the user's share of profit/loss
+            let amount = (Math.abs(profitAmount) / totalInvestedAmount) * updatedInvestment;
+            const isProfit = profitAmount >= 0;
 
-        res.status(200).json({ 
+            // Round the amounts to the nearest integer
+            amount = Math.round(amount); // Round to nearest integer
+
+            const profitAmountRounded = isProfit ? Math.round(amount) : 0; // Round profit to integer
+            const lossAmountRounded = isProfit ? 0 : Math.round(amount); // Round loss to integer
+            const netProfitRounded = isProfit ? profitAmountRounded : -lossAmountRounded;
+
+            // Add final calculated data to response
+            response.push({
+                userId: userData.userId,
+                name: userData.name,
+                email: userData.email,
+                invested_amount: updatedInvestment,
+                profit_amount: profitAmountRounded, // Rounded to integer
+                loss_amount: lossAmountRounded,     // Rounded to integer
+                net_profit: netProfitRounded,       // Rounded to integer
+            });
+
+            // Optionally, save the calculated profit/loss in the database
+            await ProfitLoss.create({
+                user_id: userData.userId,
+                project_id: projectId,
+                profit_loss_entry_id: profit_loss_entry_id, // Store the profit_loss_entry_id
+                profit_amount: profitAmountRounded,
+                loss_amount: lossAmountRounded,
+                net_profit: netProfitRounded,
+            });
+        }
+
+        console.log("Profit/Loss calculations completed:", response.length);
+
+        res.status(200).json({
             message: 'Profit and loss calculated and stored successfully',
-            userDetails: userDetails
+            userDetails: response,
         });
     } catch (error) {
         console.error('Failed to calculate profit/loss:', error);
         res.status(500).json({ error: 'Failed to calculate profit/loss' });
     }
 };
+
 
 
 // Controller function for calculating profit percentage for all users
@@ -605,7 +672,7 @@ exports.checkInvestmentTime = async (req, res, next) => {
 //         if (with_draw === true) {
 //             // Retrieve the investment profiles to be deleted
 //             const investmentProfiles = await InvestmentProfile.find({ user_id, project_id });
-            
+
 //             if (investmentProfiles.length > 0) {
 //                 await Investments.deleteMany({ investment_profile_id: { $in: investmentProfiles.map(profile => profile._id) } });
 //                 await InvestmentReceipt.deleteMany({ investment_profile_id: { $in: investmentProfiles.map(profile => profile._id) } });
@@ -642,7 +709,7 @@ exports.deleteInvestmentProfile = async (req, res, next) => {
                 const project = await Project.findById(project_id);
                 project.invested_amount -= totalInvestedAmount;
                 await project.save();
-                
+
                 // Delete associated records
                 await Investments.deleteMany({ investment_profile_id: { $in: investmentProfiles.map(profile => profile._id) } });
                 await InvestmentReceipt.deleteMany({ investment_profile_id: { $in: investmentProfiles.map(profile => profile._id) } });
@@ -670,11 +737,11 @@ exports.getInvestmentProfilesWithProjectNames = async (req, res, next) => {
         const { id } = req.params;
         const user_id = id;
         console.log(user_id);
-        
+
         // Retrieve investment profiles from the database for the given user_id
         const investmentProfiles = await InvestmentProfile.find({ user_id, is_active: true }).populate('project_id');
         console.log(investmentProfiles);
-        
+
         // // Check if any investment profiles are found
         // if (investmentProfiles.length === 0) {
         //     return res.status(400).json({ error: 'No investment profiles found for the user' });
@@ -704,18 +771,18 @@ exports.getInvestmentProfilesWithProjectNames = async (req, res, next) => {
 };
 exports.getInvestmentProfilesForProject = async (req, res, next) => {
     try {
-        const { projectId } = req.params; 
+        const { projectId } = req.params;
         console.log(projectId);
-        const investmentProfiles = await InvestmentProfile.find({ project_id: projectId, is_active: true }).populate('user_id'); 
+        const investmentProfiles = await InvestmentProfile.find({ project_id: projectId, is_active: true }).populate('user_id');
         console.log(investmentProfiles);
         if (investmentProfiles.length === 0) {
             return res.status(400).json({ error: 'No investment profiles found for this project' });
         }
         const userProfiles = investmentProfiles.map(profile => ({
             user_id: profile.user_id._id,
-            user_name: profile.user_id.fullName, 
+            user_name: profile.user_id.fullName,
             invested_amount: profile.invested_amount,
-            // investment_date: profile.createdAt 
+            // investment_date: profile.createdAt
         }));
 
         res.status(200).json(userProfiles);
@@ -787,9 +854,9 @@ exports.getWithDrawInvestmentProfileById = async (req, res, next) => {
 //         const { user_id, project_id,withdraw_type,withdraw_amount } = req.body;
 //         console.log(req.body)
 //         // Find all investment profiles for the given user_id and project_id
-     
+
 //             const investmentProfiles = await InvestmentProfile.find({ user_id, project_id });
-        
+
 
 //         // Check if any investment profiles are found
 //         if (investmentProfiles.length === 0) {
@@ -848,7 +915,7 @@ exports.setWithdrawFlagForInvestmentProfiles = async (req, res, next) => {
             return res.status(400).json({ error: 'Withdrawal request already exists for the user and project' });
         }
 
-        
+
             // Set the withdraw flag to true for all investment profiles
             await InvestmentProfile.updateMany({ user_id, project_id }, { $set: { with_draw: true } });
 
@@ -864,10 +931,10 @@ exports.setWithdrawFlagForInvestmentProfiles = async (req, res, next) => {
 
             return res.status(200).json({ message: 'Withdraw flag set to true for all investment profiles',data:withdrawRequests });
         } else if (withdraw_type === "profit") {
-            
+
             // Check if a withdrawal request already exists for the given user_id
             let existingWithdrawRequest = await WithdrawRequest.findOne({ user_id ,withdraw_type : "profit" });
-        
+
             if (existingWithdrawRequest) {
                 // If a withdrawal request already exists, update the existing entry
                 existingWithdrawRequest.withdraw_amount += amount;
@@ -882,7 +949,7 @@ exports.setWithdrawFlagForInvestmentProfiles = async (req, res, next) => {
                     accountName
                 });
             }
-        
+
             return res.status(200).json({ message: 'Withdrawal amount added to user\'s account',data:withdrawRequests });
         }else {
             return res.status(400).json({ error: 'Invalid withdraw type' });
