@@ -12,27 +12,37 @@ import { PropagateLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import Modal from "react-modal";
+import { useNavigate } from "react-router-dom";
 
 const ProfitLoss = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedEntryDetails, setSelectedEntryDetails] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
   const [formData, setFormData] = useState({
     profitPercentage: "",
     projectId: "",
     totalInvestedAmount: "",
     isProfitCalculated: false,
   });
-
+  const navigate = useNavigate();
   const userData = useSelector((state) => state.user.userData);
 
   // RTK Queries and Mutations
-  const { data: projects, isLoading: projectsLoading, refetch: refetchProjects } = useGettingAllProjectsQuery();
-  const { data: profitLossEntries, refetch: refetchEntries } = useGetAllProfitLossEntriesQuery();
-  const { data: profitLossByDate, isLoading: profitLossLoading } = useFetchProfitLossByDateQuery(selectedDate, {
-    skip: !selectedDate, // Skip fetch if no date is selected
-  });
-  const [calculateProfitPercentageForAllUsers] = useCalculateProfitPercentageForAllUsersMutation();
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    refetch: refetchProjects,
+  } = useGettingAllProjectsQuery();
+  const { data: profitLossEntries, refetch: refetchEntries } =
+    useGetAllProfitLossEntriesQuery();
+  const { data: profitLossByDate, isLoading: profitLossLoading } =
+    useFetchProfitLossByDateQuery(selectedDate, {
+      skip: !selectedDate, // Skip fetch if no date is selected
+    });
+  const [calculateProfitPercentageForAllUsers] =
+    useCalculateProfitPercentageForAllUsersMutation();
   const [createProfitLossEntry] = useCreateProfitLossEntryMutation();
 
   useEffect(() => {
@@ -44,7 +54,9 @@ const ProfitLoss = () => {
     const { name, value } = e.target;
 
     if (name === "projectId") {
-      const selectedProject = projects?.data?.find((project) => project._id === value);
+      const selectedProject = projects?.data?.find(
+        (project) => project._id === value
+      );
       setFormData((prev) => ({
         ...prev,
         projectId: value,
@@ -69,7 +81,8 @@ const ProfitLoss = () => {
 
     const profitPercentage = parseFloat(formData.profitPercentage);
     const totalInvestedAmount = parseFloat(formData.totalInvestedAmount);
-    const profitLossAmount = (Math.abs(profitPercentage) / 100) * totalInvestedAmount;
+    const profitLossAmount =
+      (Math.abs(profitPercentage) / 100) * totalInvestedAmount;
     const isProfit = profitPercentage >= 0;
 
     try {
@@ -109,12 +122,25 @@ const ProfitLoss = () => {
       console.error("Error in handleConfirmCalculation:", error);
       toast.error("An error occurred during calculation.");
     }
-};
+  };
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
+    const formattedTime = date.toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    return `${formattedDate} ${formattedTime}`;
+  };
 
   const handleViewDetails = (entry) => {
-    console.log("Entry clicked:", entry);
-    console.log("Entry ID (date):", entry._id);
-    setSelectedDate(entry._id); // Set the selected date
+    navigate(`/admin/setprofitloss/details/${entry._id}`);
   };
 
   useEffect(() => {
@@ -126,7 +152,6 @@ const ProfitLoss = () => {
       });
     }
   }, [profitLossByDate, selectedDate]);
-
 
   return (
     <>
@@ -140,29 +165,31 @@ const ProfitLoss = () => {
       ) : (
         <div>
           <div className="xl:pl-[12rem]">
-          <div className="mt-[7.6rem] xl:ml-[17rem] xl:w-[75%] w-[90%] mx-auto shadow-custom min-h-[70vh] p-5">
-            <h2 className="text-2xl font-bold text-center py-5">Profit/Loss Calculation</h2>
+            <div className="mt-[7.6rem] xl:ml-[17rem] xl:w-[75%] w-[90%] mx-auto shadow-custom min-h-[70vh] p-5">
+              <h2 className="text-2xl font-bold text-center py-5">
+                Profit/Loss Calculation
+              </h2>
 
-            <div className="flex sm:flex-row flex-col sm:justify-between mb-4">
-            <label htmlFor="investment-amount" className="font-bold">
+              <div className="flex sm:flex-row flex-col sm:justify-between mb-4">
+                <label htmlFor="investment-amount" className="font-bold">
                   Select the Project
                 </label>
-              <select
-                name="projectId"
-                value={formData.projectId}
-                onChange={handleInputChange}
-                className="sm:ml-2 p-2 rounded-md bg-slate-100"
-              >
-                <option value="">Select</option>
-                {projects?.data?.map((project) => (
-                  <option key={project._id} value={project._id}>
-                    {project.project_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <select
+                  name="projectId"
+                  value={formData.projectId}
+                  onChange={handleInputChange}
+                  className="sm:ml-2 p-2 rounded-md bg-slate-100"
+                >
+                  <option value="">Select</option>
+                  {projects?.data?.map((project) => (
+                    <option key={project._id} value={project._id}>
+                      {project.project_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="my-4">
+              <div className="my-4">
                 <label
                   htmlFor="profitPercentage"
                   className="block text-sm font-medium leading-6 text-gray-900"
@@ -170,26 +197,26 @@ const ProfitLoss = () => {
                   Enter Profit / Loss Percentage
                 </label>
                 <div className="mt-2">
-              <input
-                type="number"
-                name="profitPercentage"
-                value={formData.profitPercentage}
-                onChange={handleInputChange}
-                className="focus:outline-none px-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                placeholder="Enter percentage"
-              />
+                  <input
+                    type="number"
+                    name="profitPercentage"
+                    value={formData.profitPercentage}
+                    onChange={handleInputChange}
+                    className="focus:outline-none px-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    placeholder="Enter percentage"
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              className={`flex mx-auto w-[11rem] mt-10 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
-                formData.isProfitCalculated && "cursor-not-allowed opacity-50"
-              }`}
-              onClick={handleCalculateClick}
-            >
-              Calculate Profit/Loss
-            </button>
-          </div>
+              <button
+                className={`flex mx-auto w-[11rem] mt-10 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+                  formData.isProfitCalculated && "cursor-not-allowed opacity-50"
+                }`}
+                onClick={handleCalculateClick}
+              >
+                Calculate Profit/Loss
+              </button>
+            </div>
           </div>
 
           {/* Modal for Confirmation */}
@@ -201,15 +228,22 @@ const ProfitLoss = () => {
             overlayClassName="Overlay"
           >
             <h2 className="text-lg font-bold mb-4">Confirm Calculation</h2>
-            <p>Are you sure you want to calculate profit/loss for this project?</p>
-             <div className="mb-4 text-sm text-gray-500 text-left">
-            <p className="mb-2"><strong>Total Investment:</strong> {formData.totalInvestedAmount}</p>
-            <p className="mb-2"><strong>Profit/Loss Percentage:</strong> {formData.profitPercentage}%</p>
-          </div>
+            <p>
+              Are you sure you want to calculate profit/loss for this project?
+            </p>
+            <div className="mb-4 text-sm text-gray-500 text-left">
+              <p className="mb-2">
+                <strong>Total Investment:</strong>{" "}
+                {formData.totalInvestedAmount}
+              </p>
+              <p className="mb-2">
+                <strong>Profit/Loss Percentage:</strong>{" "}
+                {formData.profitPercentage}%
+              </p>
+            </div>
             <div className="flex justify-center gap-2 mt-4">
-
               <button
-                 className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-500"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-500"
                 onClick={handleConfirmCalculation}
               >
                 Confirm
@@ -224,56 +258,49 @@ const ProfitLoss = () => {
           </Modal>
 
           {/* Table of Profit/Loss Entries */}
-          <div className="xl:ml-[15rem] mt-[5.8rem] p-5">
-          <table className="min-w-full bg-white shadow-md rounded-lg border">
+          <div className="xl:ml-[15rem] mt-[2rem] xl:p-[5rem] p-4">
+          <div class="overflow-x-auto">
+            <table className="min-w-full bg-white shadow-md rounded-lg border">
               <thead>
-              <tr className="bg-blue-100 uppercase text-sm leading-normal">
-              <th class="py-3 px-6 text-left">Project</th>
-              <th class="py-3 px-6 text-left">Amount</th>
-              <th class="py-3 px-6 text-left">Date</th>
-              <th class="py-3 px-6 text-left">Action</th>
+                <tr className="bg-blue-100 uppercase text-sm leading-normal">
+                  <th class="py-3 px-6 text-left">Project</th>
+                  <th class="py-3 px-6 text-left">Amount</th>
+                  <th class="py-3 px-6 text-left">Date</th>
+                  <th class="py-3 px-6 text-left">Action</th>
                 </tr>
               </thead>
               <tbody className="text-gray-600 text-sm font-light">
-                {profitLossEntries?.entries?.slice().reverse().map((entry) => (
-                  <tr key={entry._id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-3 px-6 text-left font-medium">{entry.project_id?.project_name}</td>
-                    <td className="py-3 px-6 text-left font-medium">{entry.amount}</td>
-                    <td className="py-3 px-6 text-left font-medium">{entry.createdAt}</td>
-                    <td className="py-2 md:py-3 px-3 md:px-6 text-center">
-                      <button
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 px-3 md:py-2 md:px-4 rounded transition-all shadow-md text-xs md:text-base"
-                        onClick={() => handleViewDetails(entry)}
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {profitLossEntries?.entries
+                  ?.slice()
+                  .reverse()
+                  .map((entry) => (
+                    <tr
+                      key={entry._id}
+                      className="border-b border-gray-200 hover:bg-gray-50"
+                    >
+                      <td className="py-3 px-6 text-left font-medium">
+                        {entry.project_id?.project_name}
+                      </td>
+                      <td className="py-3 px-6 text-left font-medium">
+                        {entry.amount}
+                      </td>
+                      <td className="py-3 px-6 text-left font-medium">
+                        {formatDateTime(entry.createdAt)}
+                      </td>
+                      <td className="py-2 md:py-3 px-3 md:px-6 text-center">
+                        <button
+                          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 px-3 md:py-2 md:px-4 rounded transition-all shadow-md text-xs md:text-base"
+                          onClick={() => handleViewDetails(entry)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
-          </div>
-
-          {/* Display selected entry details */}
-          {profitLossLoading ? (
-            <p>Loading details...</p>
-          ) : selectedEntryDetails && (
-            <div className="mt-5 p-4 border border-gray-300 rounded-md">
-              <h3 className="text-lg font-bold mb-3">Details for {new Date(selectedDate).toLocaleDateString()}</h3>
-              {selectedEntryDetails?.records?.length > 0 ? (
-                selectedEntryDetails.records.map((record, index) => (
-                  <div key={index} className="mb-4">
-                    <p><strong>User:</strong> {record.name}</p>
-                    <p><strong>Profit:</strong> {record.profit}</p>
-                    <p><strong>Loss:</strong> {record.loss}</p>
-                    <p><strong>Net Profit:</strong> {record.netProfit}</p>
-                  </div>
-                ))
-              ) : (
-                <p>No records found for this date.</p>
-              )}
             </div>
-          )}
+          </div>
         </div>
       )}
     </>

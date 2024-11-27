@@ -39,6 +39,7 @@ import AllUsers from "./features/pages/AllUsers";
 import SingleUserDetail from "./features/pages/SingleUserDetail";
 import EditUserDetails from "./features/pages/EditUserDetails";
 import ProfitLoss from "./features/pages/ProfitLoss";
+import ProfitLossDetail from "./features/pages/ProfitLossDetail";
 import Notifications from "./features/pages/Notifications";
 import CreateNotifications from "./features/pages/CreateNotifications"
 import WithDrawListForApproval from "./features/pages/WithDrawListForApproval";
@@ -89,7 +90,7 @@ const router = createBrowserRouter([
     path: "/auth/forgot-password",
     element: <ForgotPassword></ForgotPassword>,
   },
- 
+
   {
     path: "/auth/reset-password",
     element: <ResetPassword></ResetPassword>,
@@ -104,15 +105,15 @@ const router = createBrowserRouter([
   },
   {
     path: "/member/withdraw",
-    element: <MemberRoute><WithDrawPage/></MemberRoute> 
+    element: <MemberRoute><WithDrawPage/></MemberRoute>
   },
   {
     path: "/member/statement",
-    element:  <MemberRoute><StatementPage/></MemberRoute> 
+    element:  <MemberRoute><StatementPage/></MemberRoute>
   },
   {
     path: "/member/investment/singleproject/:id",
-    element: <MemberRoute><SingleProjectPage/></MemberRoute>  
+    element: <MemberRoute><SingleProjectPage/></MemberRoute>
   },
   {
     path: "/user/editDetails/:id",
@@ -182,11 +183,18 @@ const router = createBrowserRouter([
       </AdminRoute>
     ),
   },
-  
+
   {
     path: "/admin/setprofitloss",
     element: <AdminRoute><ProfitLoss/></AdminRoute>,
+
   },
+  {
+    path: "/admin/setprofitloss/details/:date",
+    element: <AdminRoute><ProfitLossDetail/></AdminRoute>
+
+  },
+
   {
     path: "/admin/WithDrawListForApproval",
     element: <AdminRoute><WithDrawListForApproval/></AdminRoute>,
@@ -199,7 +207,7 @@ const router = createBrowserRouter([
     path: "/admin/ApprovedWithdraws",
     element: <AdminRoute><ApprovedWithdraws/></AdminRoute>,
   },
-  
+
   {
     path: "/admin/ApprovingMemberDonation",
     element: <AdminRoute><ApprovingMemberDonation/></AdminRoute>,
@@ -212,7 +220,7 @@ const router = createBrowserRouter([
     path: "/admin/allusers/:id",
     element: <AdminRoute><SingleUserDetail /></AdminRoute>,
   }
-  
+
 // /admin/SingleApprovedWithDraw/
 ]);
 
