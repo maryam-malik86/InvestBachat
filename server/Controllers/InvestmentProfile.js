@@ -512,19 +512,19 @@ exports.calculateProfitPercentageForAllUsers = async (req, res, next) => {
             // Round the amounts to the nearest integer
             amount = Math.round(amount); // Round to nearest integer
 
-            const profitAmountRounded = isProfit ? Math.round(amount) : 0; // Round profit to integer
-            const lossAmountRounded = isProfit ? 0 : Math.round(amount); // Round loss to integer
-            const netProfitRounded = isProfit ? profitAmountRounded : -lossAmountRounded;
+            const profitAmountRounded = isProfit ? Number(amount.toFixed(1)) : 0; // Round profit to 1 decimal place
+            const lossAmountRounded = isProfit ? 0 : Number(amount.toFixed(1));
+             const netProfitRounded = isProfit ? profitAmountRounded : -lossAmountRounded;
 
             // Add final calculated data to response
             response.push({
                 userId: userData.userId,
                 name: userData.name,
                 email: userData.email,
-                invested_amount: updatedInvestment,
-                profit_amount: profitAmountRounded, // Rounded to integer
-                loss_amount: lossAmountRounded,     // Rounded to integer
-                net_profit: netProfitRounded,       // Rounded to integer
+                invested_amount: Number(updatedInvestment.toFixed(1)),
+                profit_amount: profitAmountRounded, 
+                loss_amount: lossAmountRounded,    
+                net_profit: netProfitRounded,       
             });
 
             // Optionally, save the calculated profit/loss in the database
@@ -547,6 +547,98 @@ exports.calculateProfitPercentageForAllUsers = async (req, res, next) => {
     } catch (error) {
         console.error('Failed to calculate profit/loss:', error);
         res.status(500).json({ error: 'Failed to calculate profit/loss' });
+    }
+};
+exports.calculateUserCapital = async (req, res, next) => {
+    console.log("Request received:", req.body);
+    const { projectId } = req.body;
+
+    if (!projectId) {
+        console.log("Invalid input data: projectId is required");
+        return res.status(400).json({ error: 'Invalid input data: projectId is required' });
+    }
+
+    try {
+        // Fetch all active investment profiles for the given project
+        const investmentProfiles = await InvestmentProfile.find({
+            project_id: projectId,
+            is_active: true
+        }).populate('user_id', 'fullName email');
+
+        console.log("Investment profiles found:", investmentProfiles.length);
+
+        if (investmentProfiles.length === 0) {
+            console.log("No investment profiles found for the project");
+            return res.status(200).json({ message: 'No investment profiles found for the project' });
+        }
+
+        // Group investments by user
+        const userMap = {};
+        for (const profile of investmentProfiles) {
+            if (profile.user_id && profile.user_id._id) {
+                const userId = profile.user_id._id.toString();
+
+                if (!userMap[userId]) {
+                    userMap[userId] = {
+                        userId,
+                        name: profile.user_id.fullName,
+                        email: profile.user_id.email,
+                        invested_amount: 0,
+                        total_profits: 0,
+                        total_losses: 0,
+                    };
+                }
+
+                // Accumulate invested amounts
+                userMap[userId].invested_amount += profile.invested_amount;
+            } else {
+                console.warn("Profile with missing user_id:", profile);
+            }
+        }
+
+        // Fetch profit/loss records for users in the project
+        const userIds = Object.keys(userMap);
+        const profitLossRecords = await ProfitLoss.find({
+            user_id: { $in: userIds },
+            project_id: projectId,
+        });
+
+        // Aggregate profits and losses by user
+        profitLossRecords.forEach(record => {
+            const userId = record.user_id.toString();
+            if (userMap[userId]) {
+                userMap[userId].total_profits += record.profit_amount;
+                userMap[userId].total_losses += record.loss_amount;
+            }
+        });
+
+        // Calculate total capital for each user
+        const response = [];
+        for (const userId in userMap) {
+            const userData = userMap[userId];
+            const capitalAmount = userData.invested_amount + userData.total_profits - userData.total_losses;
+
+            response.push({
+                userId: userData.userId,
+                name: userData.name,
+                email: userData.email,
+                invested_amount: parseFloat(userData.invested_amount.toFixed(1)), // Ensure number format
+    profit_amount: parseFloat(userData.total_profits.toFixed(1)),
+    loss_amount: parseFloat(userData.total_losses.toFixed(1)),
+    capital_amount: parseFloat(capitalAmount.toFixed(1)),
+            });
+        }
+
+        console.log("Capital calculation completed for users:", response.length);
+
+        // Return calculated data
+        res.status(200).json({
+            message: 'Capital calculated successfully',
+            userDetails: response,
+        });
+    } catch (error) {
+        console.error('Error calculating user capital:', error);
+        res.status(500).json({ error: 'Failed to calculate user capital' });
     }
 };
 

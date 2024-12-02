@@ -15,8 +15,22 @@ export const ApprovingReceipts = createApi({
         method: "GET",
       }),
     }),
+    calculateUserCapital: builder.mutation({
+      query: ({ projectId }) => {
+        console.log("Sending request to calculate user capital for projectId:", projectId); // Log projectId
+        return {
+          url: `calculateUserCapital`,
+          method: "POST",
+          body: { projectId },
+        };
+      },
+    }),
+    
+    
     fetchProfitLossByDate: builder.query({
+     
       query: (entryid) => {
+
          // Log the date being passed
         return {
           url: 'profitlossbydate',
@@ -389,6 +403,7 @@ export const ApprovingReceipts = createApi({
 });
 
 export const {
+  useCalculateUserCapitalMutation,
   useAddTransctionIdMutation,
   useCreateProjectMutation,
   useGettingAllUsersQuery,
@@ -425,4 +440,5 @@ export const {
   useGetAllProfitLossEntriesQuery,
   useRemoveUserMutation,
   useFetchProfitLossByDateQuery,
+ 
 } = ApprovingReceipts;

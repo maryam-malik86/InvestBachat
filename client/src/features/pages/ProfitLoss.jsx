@@ -232,10 +232,10 @@ const ProfitLoss = () => {
               Are you sure you want to calculate profit/loss for this project?
             </p>
             <div className="mb-4 text-sm text-gray-500 text-left">
-              <p className="mb-2">
+              {/* <p className="mb-2">
                 <strong>Total Investment:</strong>{" "}
                 {formData.totalInvestedAmount}
-              </p>
+              </p> */}
               <p className="mb-2">
                 <strong>Profit/Loss Percentage:</strong>{" "}
                 {formData.profitPercentage}%

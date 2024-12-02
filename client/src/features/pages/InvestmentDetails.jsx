@@ -1,22 +1,42 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LeftSideBar from "../dashboard/DashboardComponents/LeftSideBar";
 import Navbar from "../dashboard/DashboardComponents/Navbar";
-import { useGettingAllProjectsQuery } from "../Admin side/ApprovingReceiptsApi";
+import { useGettingAllProjectsQuery, useCalculateUserCapitalMutation } from "../Admin side/ApprovingReceiptsApi";
 import PropagateLoader from "react-spinners/PropagateLoader";
 
 const InvestmentDetail = () => {
   const { data, isLoading, refetch } = useGettingAllProjectsQuery();
+  const [calculateUserCapital] = useCalculateUserCapitalMutation();
+  const [projectCapitals, setProjectCapitals] = useState({});
+  const [totalInvestment, setTotalInvestment] = useState(0);
   const navigate = useNavigate();
 
+  // Fetch all projects on component mount
   useEffect(() => {
     refetch();
   }, []);
 
-  const totalInvestment = data
-    ? data.data.reduce((acc, project) => acc + project.invested_amount, 0)
-    : 0;
+  // Fetch capital amount for each project
+  useEffect(() => {
+    const fetchProjectCapitals = async () => {
+      if (data && data.data) {
+        let total = 0;
+        for (const project of data.data) {
+          const response = await calculateUserCapital({ projectId: project._id }).unwrap();
+          const projectCapital = response.userDetails.reduce(
+            (acc, user) => acc + user.capital_amount,
+            0
+          );
+          setProjectCapitals((prev) => ({ ...prev, [project._id]: projectCapital }));
+          total += projectCapital;
+        }
+        setTotalInvestment(total);
+      }
+    };
 
+    fetchProjectCapitals();
+  }, [data, calculateUserCapital]);
 
   return (
     <div>
@@ -33,16 +53,12 @@ const InvestmentDetail = () => {
               <p className="text-2xl font-semibold text-indigo-600 mr-2">
                 Total Investment:
               </p>
-              <p className="text-2xl font-semibold">{totalInvestment}</p>
+              <p className="text-2xl font-semibold">${totalInvestment.toFixed(2)}</p>
             </div>
 
             {data &&
               data.data.map((project) => (
-                <div 
-                  key={project._id} 
-                  className="pb-3 rounded-lg cursor-pointer"
-                  
-                >
+                <div key={project._id} className="pb-3 rounded-lg cursor-pointer">
                   <div className="flex justify-between items-center w-full mx-auto mb-2 rounded-lg bg-gray-100 border-l-indigo-400 border-l-8 p-3 shadow-sm">
                     <div className="flex items-center">
                       <img
@@ -55,11 +71,9 @@ const InvestmentDetail = () => {
                       </p>
                     </div>
                     <div className="invest text-right">
-                      <p className="text-sm text-indigo-600">
-                        Invested Amount
-                      </p>
+                      <p className="text-sm text-indigo-600">Capital Amount</p>
                       <p className="text-lg font-semibold text-black">
-                        {project.invested_amount}
+                        ${projectCapitals[project._id]?.toFixed(2) || "Loading..."}
                       </p>
                     </div>
                   </div>

@@ -48,6 +48,7 @@ const {
   getWithDrawInvestmentProfileById,
   getWithdrawnInvestmentProfileByUserAndProject,
   fetchProfitLossByDate,
+  calculateUserCapital
 } = require("../Controllers/InvestmentProfile");
 const {
   createInvestment,
@@ -66,6 +67,7 @@ const {
   getReceiptsByInvestmentProfileIds
 } = require("../Controllers/InvestmentReceipt");
 const {
+
   addTransactionId,
   updateTransactionId,
   updateReceiptTransctionId,
@@ -124,6 +126,7 @@ router.post("/admin/bankAccount", createBankAccount);
 router.post("/admin/addTransactionId", addTransactionId);
 router.get("/admin/gettingallreceipts", getAllReceipts);
 router.get("/admin/getreceiptbyid/:id", getReceiptById);
+router.post("/admin/calculateUserCapital", calculateUserCapital);
 
 router.delete('/admin/users/:id', removeUser);
 router.get('/investment-profiles/project/:id', getInvestmentProfilesWithProjectNames);

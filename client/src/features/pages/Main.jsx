@@ -12,7 +12,8 @@ const Main = () => {
   const [profitAndLoss,setProfitAndLoss] =useState({
     profitEarned:0,
     loss:0,
-    netProfit:0
+    netProfit:0,
+    capital:0
   })
 
   const [amount, setAmount] = useState({
@@ -46,7 +47,8 @@ const Main = () => {
             setProfitAndLoss({
               profitEarned: response.data.totalProfit,
               loss: response.data.totalLoss,
-              netProfit: response.data.totalProfit + response.data.totalLoss
+              netProfit: response.data.totalProfit + response.data.totalLoss,
+              capital:response.data.totalProfit - response.data.totalLoss
             });
             setLoading(false);
           })
@@ -146,6 +148,26 @@ const Main = () => {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   className="h-6 w-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div className="relative bg-green-300 md:w-[48%] w-full h-[12rem] rounded-lg shadow-custom p-3">
+              Capital Amount
+              <div>Rs {loading ? "Loading..." : amount.investedAmount+ profitAndLoss.capital}</div>
+              <div className=" absolute right-0 bottom-5 inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-green-600 bg-green-100 rounded-full mr-6">
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  className="h-6 w-6" 
                 >
                   <path
                     strokeLinecap="round"
