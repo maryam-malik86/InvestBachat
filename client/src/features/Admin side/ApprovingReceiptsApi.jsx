@@ -26,7 +26,13 @@ export const ApprovingReceipts = createApi({
       },
     }),
     
-    
+  //   calculateUserCapitalById: builder.mutation({
+  //     query: (userId) => ({
+  //         url: '/calculateUserCapitalById', // Backend route
+  //         method: 'POST',
+  //         body: { userId },
+  //     }),
+  // }),
     fetchProfitLossByDate: builder.query({
      
       query: (entryid) => {
@@ -440,5 +446,6 @@ export const {
   useGetAllProfitLossEntriesQuery,
   useRemoveUserMutation,
   useFetchProfitLossByDateQuery,
+  //useCalculateUserCapitalByIdMutation,
  
 } = ApprovingReceipts;

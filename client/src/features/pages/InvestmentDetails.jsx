@@ -53,7 +53,7 @@ const InvestmentDetail = () => {
               <p className="text-2xl font-semibold text-indigo-600 mr-2">
                 Total Investment:
               </p>
-              <p className="text-2xl font-semibold">${totalInvestment.toFixed(2)}</p>
+              <p className="text-2xl font-semibold">{totalInvestment.toFixed(1)}</p>
             </div>
 
             {data &&
@@ -73,7 +73,7 @@ const InvestmentDetail = () => {
                     <div className="invest text-right">
                       <p className="text-sm text-indigo-600">Capital Amount</p>
                       <p className="text-lg font-semibold text-black">
-                        ${projectCapitals[project._id]?.toFixed(2) || "Loading..."}
+                        {projectCapitals[project._id]?.toFixed(1) || "Loading..."}
                       </p>
                     </div>
                   </div>

@@ -642,6 +642,83 @@ exports.calculateUserCapital = async (req, res, next) => {
     }
 };
 
+// exports.calculateUserCapitalById = async (req, res, next) => {
+//     console.log("Request received:", req.body);
+//     const { userId } = req.body;
+
+//     if (!userId) {
+//         console.log("Invalid input data: userId is required");
+//         return res.status(400).json({ error: 'Invalid input data: userId is required' });
+//     }
+
+//     try {
+//         // Fetch all investment profiles for the user
+//         const investmentProfiles = await InvestmentProfile.find({
+//             user_id: userId,
+//             is_active: true,
+//         });
+
+//         console.log("Investment profiles found for user:", investmentProfiles.length);
+
+//         if (investmentProfiles.length === 0) {
+//             console.log("No investment profiles found for the user");
+//             return res.status(200).json({
+//                 message: 'No investment profiles found for the user',
+//                 userDetails: {
+//                     invested_amount: 0,
+//                     total_profits: 0,
+//                     total_losses: 0,
+//                     capital_amount: 0,
+//                 },
+//             });
+//         }
+
+//         // Calculate total invested amount
+//         let totalInvestedAmount = 0;
+//         investmentProfiles.forEach(profile => {
+//             totalInvestedAmount += profile.invested_amount;
+//         });
+
+//         // Fetch profit/loss records for the user
+//         const profitLossRecords = await ProfitLoss.find({
+//             user_id: userId,
+//         });
+
+//         console.log("Profit/Loss records found for user:", profitLossRecords.length);
+
+//         // Calculate total profits and losses
+//         let totalProfits = 0;
+//         let totalLosses = 0;
+//         profitLossRecords.forEach(record => {
+//             totalProfits += record.profit_amount;
+//             totalLosses += record.loss_amount;
+//         });
+
+//         // Calculate user's capital
+//         const capitalAmount = totalInvestedAmount + totalProfits - totalLosses;
+
+//         const response = {
+//             userId,
+//             invested_amount: parseFloat(totalInvestedAmount.toFixed(1)), // Ensure number format
+//             profit_amount: parseFloat(totalProfits.toFixed(1)),
+//             loss_amount: parseFloat(totalLosses.toFixed(1)),
+//             capital_amount: parseFloat(capitalAmount.toFixed(1)),
+//         };
+
+//         console.log("Capital calculation completed for user:", response);
+
+//         // Return calculated data
+//         res.status(200).json({
+//             message: 'Capital calculated successfully',
+//             userDetails: response,
+//         });
+//     } catch (error) {
+//         console.error('Error calculating user capital:', error);
+//         res.status(500).json({ error: 'Failed to calculate user capital' });
+//     }
+// };
+
+
 
 
 // Controller function for calculating profit percentage for all users
