@@ -38,6 +38,7 @@ exports.getAllReceipts = async (req, res,next) => {
     }
 };
 
+
 exports.getReceiptById = async (req, res,next) => {
     try {
         const receiptId = req.params.id;
@@ -56,7 +57,23 @@ exports.getReceiptById = async (req, res,next) => {
     }
 };
 
-
+exports.deleteReceipt = async (req, res, next) => {
+  
+  try {
+      const receiptId = req.params.id;  
+      const deletedReceipt = await Receipt.findByIdAndDelete(receiptId);
+      if (!deletedReceipt) {
+        return res.status(404).json({ error: 'Receipt not found' });
+      }
+  
+      res.status(200).json({ message: 'Receipt deleted successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to delete receipt' });
+    }  
+  };
+  
+  
 exports.updateReceiptIsDeleted = async (req, res,next) => {
     try {
         const { id } = req.body;

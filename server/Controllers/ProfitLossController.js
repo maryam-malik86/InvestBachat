@@ -86,28 +86,39 @@ exports.subtractAmountFromDonation = async (req, res, next) => {
 
 exports.createProfitLossEntry = async (req, res, next) => {
     try {
-        const { user_id, project_id, amount } = req.body;
-        console.log(user_id, project_id, amount);
-        
+        const { user_id, project_id, amount, invested_amount, profit_amount, loss_amount } = req.body;
+
+        // Log the incoming data to ensure all required fields are being received
+        console.log('Received Data:', { user_id, project_id, amount, invested_amount, profit_amount, loss_amount });
+
+        // Create a new profit/loss entry
         const newEntry = new ProfitLossEntry({
             user_id,
             project_id,
-            amount: amount,
-            createdAt: new Date(),
+            amount, // Total profit/loss amount (can be positive or negative)
+            invested_amount, // Total capital invested
+            profit_amount, // Profit amount (positive value if it's a profit, else 0)
+            loss_amount, // Loss amount (positive value if it's a loss, else 0)
+            createdAt: new Date(), // Timestamp
         });
 
+        // Save the entry to the database
         const savedEntry = await newEntry.save();
-  console.log('Saved entry:', savedEntry);
-   res.json({
-            message: "Profit loss entry created successfully",
-            data: savedEntry, 
-        });
 
+        // Log the saved entry for debugging purposes
+        console.log('Saved Entry:', savedEntry);
+
+        // Send a success response
+        res.json({
+            message: "Profit/loss entry created successfully",
+            data: savedEntry,
+        });
     } catch (error) {
-        console.error(error);
+        console.error('Error creating profit/loss entry:', error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 
 
 exports.getAllProfitLossEntries = async (req, res, next) => {

@@ -11,6 +11,7 @@ const ProfitLossDetailsPage = () => {
   const [selectedEntryDetails, setSelectedEntryDetails] = useState(null);
 
   useEffect(() => {
+    console.log("Received data from API:", profitLossByDate);
     if (profitLossByDate) {
       setSelectedEntryDetails({
         records: profitLossByDate.records,
@@ -37,6 +38,8 @@ const ProfitLossDetailsPage = () => {
               <thead>
                 <tr className="bg-blue-100 uppercase text-sm leading-normal">
                   <th className="py-3 px-6 text-left">User</th>
+                  <th className="py-3 px-6 text-left">Investment Amount</th>
+
                   <th className="py-3 px-6 text-left">Profit</th>
                   <th className="py-3 px-6 text-left">Loss</th>
                   <th className="py-3 px-6 text-left">Net Profit</th>
@@ -46,6 +49,7 @@ const ProfitLossDetailsPage = () => {
                 {selectedEntryDetails.records.map((record, index) => (
                   <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-3 px-6 text-left">{record.name}</td>
+                    <td className="py-3 px-6 text-left">{record.invested_amount}</td>
                     <td className="py-3 px-6 text-left">{record.profit}</td>
                     <td className="py-3 px-6 text-left">{record.loss}</td>
                     <td className="py-3 px-6 text-left">{record.netProfit}</td>

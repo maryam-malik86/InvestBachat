@@ -26,13 +26,13 @@ export const ApprovingReceipts = createApi({
       },
     }),
     
-  //   calculateUserCapitalById: builder.mutation({
-  //     query: (userId) => ({
-  //         url: '/calculateUserCapitalById', // Backend route
-  //         method: 'POST',
-  //         body: { userId },
-  //     }),
-  // }),
+    calculateUserCapitalById: builder.mutation({
+      query: (userId) => ({
+          url: '/calculateUserCapitalById', // Backend route
+          method: 'POST',
+          body: { userId },
+      }),
+  }),
     fetchProfitLossByDate: builder.query({
      
       query: (entryid) => {
@@ -270,7 +270,16 @@ export const ApprovingReceipts = createApi({
         },
       }),
     }),
-
+    deleteReceipt: builder.mutation({
+      query: (id) => {
+        console.log("Attempting to delete receipt with ID:", id); // Log the ID being sent to the backend
+        return {
+          url: `/receipt/${id}`,
+          method: 'DELETE',
+        };
+      },
+    }),
+    
     getWithdrawnInvestmentProfiles: builder.query({
       query: () => ({
         url: `getWithdrawnInvestmentProfiles`,
@@ -384,17 +393,21 @@ export const ApprovingReceipts = createApi({
     }),
 
     createProfitLossEntry: builder.mutation({
-      query: ({
-        user_id, project_id, amount, 
-      }) => ({
-        url: `createProfitLossEntry`,
-        method: "POST",
-        body: {
-          user_id, project_id, amount, 
-        },
+      query: ({ user_id, project_id, amount, invested_amount, profit_amount, loss_amount }) => ({
+          url: `createProfitLossEntry`,
+          method: "POST",
+          body: {
+              user_id, 
+              project_id, 
+              amount, 
+              invested_amount, 
+              profit_amount, 
+              loss_amount
+          },
       }),
       invalidatesTags: ["gettingProfitLossEntry"]
-    }),
+  }),
+  
 
     getAllProfitLossEntries: builder.query({
       providesTags: ["gettingProfitLossEntry"],
@@ -425,6 +438,7 @@ export const {
   useAddInvestmentMutation,
   useUpdateInvestmentStatusByIdMutation,
   useUpdateReceiptIdMutation,
+  useDeleteReceiptMutation,
   useUpdatinguserroleMutation,
   useUpdateUserIsActiveMutation,
   usePdfDownloadQuery,
@@ -446,6 +460,6 @@ export const {
   useGetAllProfitLossEntriesQuery,
   useRemoveUserMutation,
   useFetchProfitLossByDateQuery,
-  //useCalculateUserCapitalByIdMutation,
+  useCalculateUserCapitalByIdMutation,
  
 } = ApprovingReceipts;

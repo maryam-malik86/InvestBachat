@@ -10,9 +10,20 @@ const profitLossEntrySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Projects'
     },  
-    amount: {
+    profit_amount: {
         type: Number,
-        required: true
+        required: true,
+        default: 0
+    },
+    invested_amount: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    loss_amount: {
+        type: Number,
+        required: true,
+        default:0
     },
     createdAt: {
        type:String

@@ -1,93 +1,144 @@
-import React, { useEffect } from "react";
-import Navbar from "../dashboard/DashboardComponents/Navbar";
-import LeftSideBar from "../dashboard/DashboardComponents/LeftSideBar";
-import { useGettingAllReceiptsQuery } from "../Admin side/ApprovingReceiptsApi";
-import { useNavigate } from "react-router-dom";
-import PropagateLoader from "react-spinners/PropagateLoader";
+import React, { useState, useEffect } from 'react';
+import { useGettingAllReceiptsQuery, useDeleteReceiptMutation } from '../Admin side/ApprovingReceiptsApi';
+import { PropagateLoader } from 'react-spinners';
+import Navbar from '../dashboard/DashboardComponents/Navbar';
+import LeftSideBar from '../dashboard/DashboardComponents/LeftSideBar';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { ConnectionStates } from 'mongoose';
 
 const ReceiptsList = () => {
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useGettingAllReceiptsQuery();
+  const [deleteReceipt] = useDeleteReceiptMutation(); // Add the delete mutation
+  const [receipts, setReceipts] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteReceiptId, setDeleteReceiptId] = useState(null);
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+    if (data) {
+      setReceipts(data);
+    }
+  }, [data]);
+
+  const handleNavigate = (receiptId) => {
+    navigate(`/admin/receiptlist/previewreceipt/${receiptId}`);
+  };
+
+  const handleApprove = (receiptId) => {
+    navigate(`/admin/chechreceipt/${receiptId}`);
+  };
+
+  const handleDelete = (receiptId) => {
+    setDeleteReceiptId(receiptId);
+    setShowDeleteModal(true); 
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const response = await deleteReceipt(deleteReceiptId).unwrap();
+   toast.success(response.message); 
+   setShowDeleteModal(false);
+    refetch();
+    } catch (error) {
+      console.error("Error deleting receipt:", error); 
+   if (error.data && error.data.error) {
+        toast.error(error.data.error); 
+      } else {
+        toast.error('Failed to delete the receipt');
+      }
+    }
+  };
+  
+  const cancelDelete = () => {
+    setShowDeleteModal(false); // Close modal without deleting
+  };
 
   return (
-    <div className="z-[0]">
+    <div>
       <Navbar />
       <LeftSideBar />
-
-      <div className="">
-        <div className="xl:pl-[16rem] mx-auto xl:w-[96%] w-[95%] mt-[7.8rem] min-h-[10rem]">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-[full]">
-              <PropagateLoader color="#3B82F6" />
-            </div>
-          ) : (
-            <div>
-              {data && data.filter((receipt) => !receipt.is_deleted).length > 0 ? (
-                data
-                  .filter((receipt) => !receipt.is_deleted)
-                  .map((receipt) => {
-                    return (
-                      <div className="my-4" key={receipt._id}>
-                        <div className="flex justify-between items-center pl-5 bg-gray-200 w-[100%] rounded-lg">
-                          <div className="w-[60%] flex justify-between">
-                            {/* Check if receipt.user_id exists before accessing fullName */}
-                            <div>
-                              {receipt.user_id ? receipt.user_id.fullName : "No name available"}
-                            </div>
-                            <div className="md:block hidden">
-                              {receipt.user_id ? receipt.user_id.cnicNumber : "No CNIC available"}
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              className="h-[3rem] w-[5rem] bg-red-500 text-white rounded-lg"
-                              onClick={() => {
-                                navigate(`/admin/receiptlist/previewreceipt/${receipt._id}`);
-                              }}
-                            >
-                              Preview
-                            </button>
-                            <button
-                              className="h-[3rem] w-[5rem] bg-indigo-500 text-white rounded-lg"
-                              onClick={() => {
-                                navigate(`/admin/chechreceipt/${receipt._id}`);
-                              }}
-                            >
-                              Approve
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-              ) : (
-                <div className="flex flex-col justify-center items-center h-screen text-2xl font-bold text-indigo-500 space-y-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    className="h-12 w-12 text-indigo-500"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  No pending left
-                </div>
-              )}
-            </div>
-          )}
+      <div className="xl:ml-[15rem] mt-[5.8rem] p-5">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+          <h1 className="text-xl md:text-2xl mb-2 md:mb-0">Pending Receipts</h1>
         </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[full]">
+            <PropagateLoader color="#3B82F6" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white shadow-md rounded-lg border">
+              <thead>
+                <tr className="bg-blue-100 uppercase text-xs md:text-sm leading-normal py-2 px-4">
+                  <th className="py-3 md:py-3 px-4 md:px-6 text-left">User</th>
+                  <th className="py-3 md:py-3 px-4 md:px-6 text-left">CNIC</th>
+                  <th className="py-3 md:py-3 px-4 md:px-6 text-center">Actions</th> {/* Centered the heading */}
+                </tr>
+              </thead>
+              <tbody className="text-gray-600 text-xs md:text-sm font-light">
+                {receipts.map((receipt) => (
+                  <tr key={receipt._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="py-2 md:py-3 px-3 md:px-6 text-left font-medium">
+                      {receipt.user_id ? receipt.user_id.fullName : 'No name available'}
+                    </td>
+                    <td className="py-2 md:py-3 px-3 md:px-6 text-left">
+                      {receipt.user_id ? receipt.user_id.cnicNumber : 'No CNIC available'}
+                    </td>
+                    <td className="py-2 md:py-3 px-3 md:px-6 text-center">
+                      <div className="flex justify-center gap-3">
+                        <button
+                          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded transition-all text-xs md:text-sm"
+                          onClick={() => handleNavigate(receipt._id)}
+                        >
+                          Preview
+                        </button>
+                        <button
+                          className="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded transition-all text-xs md:text-sm"
+                          onClick={() => handleApprove(receipt._id)}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded transition-all text-xs md:text-sm"
+                          onClick={() => handleDelete(receipt._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      {/* Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-4">Are you sure you want to delete this receipt?</h3>
+            <div className="flex justify-between">
+              <button
+                className="bg-gray-500 hover:bg-gray-600 text-white py-1 px-4 rounded"
+                onClick={cancelDelete}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-red-500 hover:bg-red-600 text-white py-1 px-4 rounded"
+                onClick={confirmDelete}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

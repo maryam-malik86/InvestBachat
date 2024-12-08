@@ -19,6 +19,11 @@ const profitLossSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
+    invested_amount: {
+        type: Number,
+        required: true,
+        default: 0
+    },
     loss_amount: {
         type: Number,
         required: true,

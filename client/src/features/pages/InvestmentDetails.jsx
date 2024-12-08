@@ -24,10 +24,9 @@ const InvestmentDetail = () => {
         let total = 0;
         for (const project of data.data) {
           const response = await calculateUserCapital({ projectId: project._id }).unwrap();
-          const projectCapital = response.userDetails.reduce(
-            (acc, user) => acc + user.capital_amount,
-            0
-          );
+          const projectCapital = Array.isArray(response.userDetails) 
+          ? response.userDetails.reduce((acc, user) => acc + user.capital_amount, 0) 
+          : 0;
           setProjectCapitals((prev) => ({ ...prev, [project._id]: projectCapital }));
           total += projectCapital;
         }

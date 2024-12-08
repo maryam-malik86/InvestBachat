@@ -49,7 +49,7 @@ const {
   getWithdrawnInvestmentProfileByUserAndProject,
   fetchProfitLossByDate,
   calculateUserCapital,
-  // calculateUserCapitalById,
+   calculateUserCapitalById,
 } = require("../Controllers/InvestmentProfile");
 const {
   createInvestment,
@@ -62,6 +62,7 @@ const {
   createReceipt,
   getAllReceipts,
   getReceiptById,
+  deleteReceipt,
   updateReceiptIsDeleted,
   getReceiptDetailsById,
   updateReceiptId,
@@ -121,7 +122,8 @@ router.get("/admin", auth, isAdmin, (req, res) => {
     message: "Welcome to the protected route for Admin ",
   });
 });
-//router.post("/admin/calculateUserCapitalById", calculateUserCapitalById);
+router.delete("/admin/receipt/:id", deleteReceipt);
+router.post("/admin/calculateUserCapitalById", calculateUserCapitalById);
 router.post("/admin/project", addProject);
 router.post("/admin/bankAccount", createBankAccount);
 router.post("/admin/addTransactionId", addTransactionId);
