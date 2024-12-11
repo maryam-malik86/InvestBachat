@@ -4,7 +4,7 @@ import { PropagateLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import Navbar from "../dashboard/DashboardComponents/Navbar";
 import LeftSideBar from "../dashboard/DashboardComponents/LeftSideBar";
-import { usePrevieweReceiptByIdQuery, useUpdateInvestmentProfileByIdMutation, useUpdateInvestmentByIdMutation, useUpdateInvestmentStatusByIdMutation, useAddInvestmentMutation, useDeleteReceiptMutation } from "../Admin side/ApprovingReceiptsApi";
+import { usePrevieweReceiptByIdQuery, useUpdateInvestmentProfileByIdMutation, useUpdateInvestmentByIdMutation, useUpdateInvestmentStatusByIdMutation, useAddInvestmentMutation, useDeleteReceiptMutation } from "../Admin side/ApprovingReceiptsApi"; 
 import { AppContext } from "../../app/AppContext";
 
 const PreviewReceipt = () => {
@@ -12,11 +12,11 @@ const PreviewReceipt = () => {
   const [updateInvestmentById] = useUpdateInvestmentByIdMutation();
   const [updateInvestmentStatusById] = useUpdateInvestmentStatusByIdMutation();
   const [addInvestment] = useAddInvestmentMutation();
-  const [deleteReceipt] = useDeleteReceiptMutation();
+  const [deleteReceipt] = useDeleteReceiptMutation(); 
   const navigate = useNavigate();
   const { id } = useParams();
   const { data, isLoading, refetch } = usePrevieweReceiptByIdQuery(id);
-
+  
   const [formData, setformData] = useState({
     investment_amount: "",
     investment_frequency: "",
@@ -35,9 +35,9 @@ const PreviewReceipt = () => {
 
   useEffect(() => {
     if (data) {
-
+     
       setformData({
-        ID: data._id,
+         ID:data._id,
         investment_amount: data.investment_profile_id.invested_amount,
         investment_frequency: data.investment_profile_id.investment_frequency,
         receipt_picture: data.receipt_path,
@@ -82,20 +82,20 @@ const PreviewReceipt = () => {
   }
 
   const deleteHandler = () => {
-
+    
     deleteReceipt(formData.ID)
       .unwrap()
       .then((response) => {
         toast.success(response.message);
         setShowModal(false);  // Close the modal after deletion
-        navigate('/admin/receiptlist');
+        navigate('/admin/receiptlist'); 
       })
       .catch((error) => {
         toast.error("Failed to delete receipt");
         console.error(error);
       });
   };
-
+  
 
   const submitHandler = () => {
     updateInvestmentProfileById({
@@ -255,7 +255,7 @@ const PreviewReceipt = () => {
                     investment_amount: formData.investment_amount,
                   });
                   //   updateReceiptTransctionId({id:data._id,receiptId:data.receipt_id,})
-
+                  
                   addInvestment({
                     id: data.investment_profile_id.project_id,
                     amount: formData.investment_amount,
@@ -264,27 +264,27 @@ const PreviewReceipt = () => {
                   })
                     .unwrap()
                     .then((response) => {
-                      updateInvestmentStatusById({
-                        id: data.investment_id[0]._id,
-                        investment_status: "paid",
-                      })
-                        .unwrap()
-                        .then((response) => {
+                        updateInvestmentStatusById({
+                          id: data.investment_id[0]._id,
+                          investment_status: "paid",
                         })
-                        .catch(() => {
-                          toast.error("Error Occured");
-                        });
-
-
+                          .unwrap()
+                          .then((response) => {
+                          })
+                          .catch(() => {
+                            toast.error("Error Occured");
+                          });
+                          
+                      
                     })
                     .catch((error) => {
                       toast.error("Error Occured");
                     });
                   toast.success("Previewed");
-                  navigate('/admin/receiptlist')
-
+                    navigate('/admin/receiptlist')
+                    
                 }}
-
+  
               >
                 Submit              </button>
               <button
