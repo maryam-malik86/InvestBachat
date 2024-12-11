@@ -243,10 +243,50 @@ const PreviewReceipt = () => {
             <div className="mt-4 flex justify-center space-x-4">
               <button
                 className="bg-indigo-600 rounded-lg text-white py-2 text-lg hover:bg-indigo-700 transition-all w-[200px]"
-                onClick={submitHandler}
+                onClick={() => {
+                  submitHandler();
+                  updateInvestmentProfileById({
+                    id: data.investment_profile_id._id,
+                    invested_amount: formData.investment_amount,
+                    investment_frequency: formData.investment_frequency,
+                  });
+                  updateInvestmentById({
+                    id: data.investment_id[0]._id,
+                    investment_amount: formData.investment_amount,
+                  });
+                  //   updateReceiptTransctionId({id:data._id,receiptId:data.receipt_id,})
+                  
+                  addInvestment({
+                    id: data.investment_profile_id.project_id,
+                    amount: formData.investment_amount,
+                    investment_status:
+                      data.investment_id[0].Investments.investment_status,
+                  })
+                    .unwrap()
+                    .then((response) => {
+                        updateInvestmentStatusById({
+                          id: data.investment_id[0]._id,
+                          investment_status: "paid",
+                        })
+                          .unwrap()
+                          .then((response) => {
+                          })
+                          .catch(() => {
+                            toast.error("Error Occured");
+                          });
+                          
+                      
+                    })
+                    .catch((error) => {
+                      toast.error("Error Occured");
+                    });
+                  toast.success("Previewed");
+                    navigate('/admin/receiptlist')
+                    
+                }}
+  
               >
-                Approve Investment
-              </button>
+                Submit              </button>
               <button
                 className="bg-red-600 rounded-lg text-white py-2 text-lg hover:bg-red-700 transition-all w-[200px]"
                 onClick={openModal}  // Open the modal
