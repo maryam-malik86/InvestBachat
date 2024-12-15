@@ -5,12 +5,11 @@ import Navbar from '../dashboard/DashboardComponents/Navbar';
 import LeftSideBar from '../dashboard/DashboardComponents/LeftSideBar';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { ConnectionStates } from 'mongoose';
 
 const ReceiptsList = () => {
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useGettingAllReceiptsQuery();
-  const [deleteReceipt] = useDeleteReceiptMutation(); // Add the delete mutation
+  const [deleteReceipt] = useDeleteReceiptMutation();
   const [receipts, setReceipts] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteReceiptId, setDeleteReceiptId] = useState(null);
@@ -18,41 +17,41 @@ const ReceiptsList = () => {
   useEffect(() => {
     refetch();
     if (data) {
-      setReceipts(data);
+      setReceipts(data.filter((receipt) => !receipt.is_deleted)); // Filter non-deleted receipts
     }
-  }, [data]);
+  }, [data, refetch]);
 
   const handleNavigate = (receiptId) => {
     navigate(`/admin/receiptlist/previewreceipt/${receiptId}`);
   };
 
-  const handleApprove = (receiptId) => {
-    navigate(`/admin/chechreceipt/${receiptId}`);
+  const handleApproveNavigate = (receiptId) => {
+    navigate(`/admin/receiptlist/approve/${receiptId}`); // Navigate to the approval page
   };
 
   const handleDelete = (receiptId) => {
     setDeleteReceiptId(receiptId);
-    setShowDeleteModal(true); 
+    setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
       const response = await deleteReceipt(deleteReceiptId).unwrap();
-   toast.success(response.message); 
-   setShowDeleteModal(false);
-    refetch();
+      toast.success(response.message);
+      setShowDeleteModal(false);
+      refetch(); // Refetch data to update the list
     } catch (error) {
-      console.error("Error deleting receipt:", error); 
-   if (error.data && error.data.error) {
-        toast.error(error.data.error); 
+      console.error('Error deleting receipt:', error);
+      if (error.data && error.data.error) {
+        toast.error(error.data.error);
       } else {
         toast.error('Failed to delete the receipt');
       }
     }
   };
-  
+
   const cancelDelete = () => {
-    setShowDeleteModal(false); // Close modal without deleting
+    setShowDeleteModal(false);
   };
 
   return (
@@ -75,7 +74,7 @@ const ReceiptsList = () => {
                 <tr className="bg-blue-100 uppercase text-xs md:text-sm leading-normal py-2 px-4">
                   <th className="py-3 md:py-3 px-4 md:px-6 text-left">User</th>
                   <th className="py-3 md:py-3 px-4 md:px-6 text-left">CNIC</th>
-                  <th className="py-3 md:py-3 px-4 md:px-6 text-center">Actions</th> {/* Centered the heading */}
+                  <th className="py-3 md:py-3 px-4 md:px-6 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-gray-600 text-xs md:text-sm font-light">
@@ -97,7 +96,9 @@ const ReceiptsList = () => {
                         </button>
                         <button
                           className="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded transition-all text-xs md:text-sm"
-                          onClick={() => handleApprove(receipt._id)}
+                          onClick={() => {
+                            navigate(`/admin/chechreceipt/${receipt._id}`);
+                          }}
                         >
                           Approve
                         </button>
