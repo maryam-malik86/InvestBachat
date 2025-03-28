@@ -32,31 +32,34 @@ const AllApprovedReceipts = () => {
                 data.filter((receipt) => receipt.is_deleted) // Filter out receipts where is_deleted is false
                   .map((receipt) => {
                     return (
-                      <div className=" my-4">
-                        <div
-                          className="flex justify-between items-center pl-5 bg-gray-200 w-[100%]  rounded-lg"
-                          key={receipt._id}
-                        >
-                          <div className="w-[60%] flex justify-between ">
-                            <div>{receipt.user_id.fullName}</div>
-                            <div className="md:block hidden">
-                              {receipt.user_id.cnicNumber}
-                            </div>
-                          </div>
+                                       <div className="my-4">
+  <div
+    className="flex justify-between items-center pl-5 bg-gray-200 w-[100%] rounded-lg"
+    key={receipt._id}
+  >
+    {receipt.user_id ? (
+      <div className="w-[60%] flex justify-between">
+        <div>{receipt.user_id.fullName}</div>
+        <div className="md:block hidden">{receipt.user_id.cnicNumber}</div>
+      </div>
+    ) : (
+      <div className="text-red-500">User data unavailable</div>
+    )}
 
-                          <div className="flex gap-2">
-                          <button
-                            className="h-[3rem] w-[5rem] bg-indigo-500 text-white rounded-lg"
-                            onClick={() => {
-                              navigate(`/admin/receiptlist/approvedreceipts/previewapprovedreceitlist/${receipt._id}`);
-                            }}
-                          >
-                            Approved
-                          </button>
-                          
-                          </div>
-                        </div>
-                      </div>
+    <div className="flex gap-2">
+      <button
+        className="h-[3rem] w-[5rem] bg-indigo-500 text-white rounded-lg"
+        onClick={() => {
+          navigate(
+            `/admin/receiptlist/approvedreceipts/previewapprovedreceitlist/${receipt._id}`
+          );
+        }}
+      >
+        Approved
+      </button>
+    </div>
+  </div>
+</div>
                     );
                   })
               ) : (
