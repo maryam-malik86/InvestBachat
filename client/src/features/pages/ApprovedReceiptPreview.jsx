@@ -70,18 +70,23 @@ const ApprovedReceiptPreview = () => {
                 <label htmlFor="investment-amount" className="font-bold">
                   Investment Frequency
                 </label>
-                <select
-                  name="investment_frequency"
-                  disabled
-                  value={data.investment_profile_id.investment_frequency}
-                  id="investment-amount"
-                  className="sm:ml-2 p-1 sm:w-[13.2rem] w-full bg-slate-100 rounded-md"
-                >
-                  <option>Select</option>
-                  <option value="1">Monthly</option>
-                  <option value="6">By Annually</option>
-                  <option value="12">Annually</option>
-                </select>
+               <select
+  name="investment_amount"
+  disabled
+  value={data?.investment_profile_id?.invested_amount || ""}
+  id="investment-amount"
+  className="sm:ml-2 p-1 sm:w-[13.2rem] w-full bg-slate-100 rounded-md"
+>
+  <option>Select</option>
+  {[...Array(10)].map((_, index) => {
+    const amount = (index + 1) * 1000; 
+    return (
+      <option key={amount} value={amount}>
+        {amount.toLocaleString()} 
+      </option>
+    );
+  })}
+</select>
               </div>
 
               <div className="flex sm:flex-row flex-col sm:justify-between mb-4">
